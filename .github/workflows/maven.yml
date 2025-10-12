@@ -19,7 +19,7 @@ permissions:
   security-events: write
   id-token: write
   # Add this line:
-  dependencies: write
+ # dependencies: write
   
 jobs:
   build:
