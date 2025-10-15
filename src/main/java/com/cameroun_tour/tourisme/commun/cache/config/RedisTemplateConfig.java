@@ -1,4 +1,4 @@
-package com.cameroun_tour.tourisme.cache.config;
+package com.cameroun_tour.tourisme.commun.cache.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

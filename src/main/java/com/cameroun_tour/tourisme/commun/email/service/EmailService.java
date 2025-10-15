@@ -1,0 +1,65 @@
+package com.cameroun_tour.tourisme.commun.email.service;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Component;
+
+import com.cameroun_tour.tourisme.commun.cache.api.OtpServiceApi;
+import com.cameroun_tour.tourisme.commun.email.api.EmailServiceApi;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
+
+@Component
+@RequiredArgsConstructor
+public class EmailService implements EmailServiceApi {
+
+    private final OtpServiceApi otpService;
+    private final JavaMailSender javaMailSender;
+
+    @Override
+    public void sendMessage(String destinataire, String subject, String body){
+        try {
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message,true);
+            helper.setTo(destinataire);
+            helper.setSubject(subject);
+            helper.setText(body, true);
+            javaMailSender.send(message);
+        } catch (MessagingException e) {
+            e.printStackTrace();
+            e.getMessage();
+            throw new RuntimeException("Erreur lors de l'envoi du Mail "+e);
+        }
+    }
+    
+    @Override
+    public void sendOtp(String email){
+        String subject = "Vérification de votre Email";
+        String otpCode = otpService.generateOtp();
+        String htmlTemplate = null;
+
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("otp_email.html")) {
+            if (is == null) {
+                throw new RuntimeException("Le fichier otp_email.html est introuvable dans les ressources");
+            }
+            htmlTemplate = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (htmlTemplate == null) {
+            throw new RuntimeException("Le fichier otp_mail.html est null");
+        }
+        String emailContent = htmlTemplate.replace("[OTP_CODE]", otpCode);
+
+        sendMessage(email, subject, emailContent);
+
+        otpService.saveOtp(email, otpCode);
+    }
+}
