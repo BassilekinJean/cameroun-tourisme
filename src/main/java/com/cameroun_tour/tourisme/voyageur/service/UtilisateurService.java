@@ -23,7 +23,7 @@ public class UtilisateurService implements UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public void registerNewUser(UserRegistrationDto registrationDto) {
+    public void createUserAccount(UserRegistrationDto registrationDto) {
         Utilisateur newUser = new Utilisateur();
 
         newUser.setNomComplet(registrationDto.nomComplet());

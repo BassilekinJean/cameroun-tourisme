@@ -8,7 +8,7 @@ import com.cameroun_tour.tourisme.voyageur.dto.UserRegistrationDto;
 
 public interface UserService {
 
-    void registerNewUser(UserRegistrationDto registrationDto);
+    void createUserAccount(UserRegistrationDto registrationDto);
 
     Optional<Utilisateur> findUserWithEmail(String email);
 
