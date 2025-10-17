@@ -18,12 +18,25 @@ on:
     branches: [ "main", "dev" ]
   pull_request:
     branches: [ "main", "dev" ]
-    
+
+
 jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    
+    services:
+        mysql:
+          image: mysql:8
+          ports:
+            - 3306:3306
+          env:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: cameroun_tour
+            MYSQL_USER: ${{ secrets.DB_USER_MYSQL }}
+            MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD_MYSQL }}
+          options: --health-cmd="mysqladmin ping --silent" --health-interval=10s --health-timeout=5s --health-retries=10
+          
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 21
