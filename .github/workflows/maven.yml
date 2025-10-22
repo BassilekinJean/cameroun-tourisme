@@ -27,7 +27,7 @@ jobs:
     
     services:
         mysql:
-          image: mysql:8
+          image: mysql
           ports:
             - 3306:3306
           env:
@@ -58,53 +58,53 @@ jobs:
             - 1025:1025
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: maven
-    - name: Start Keycloak (dev) with docker
-      env:
-        KEYCLOAK_ADMIN: admin
-        # Optionnel: utilisez un secret GitHub au lieu de mettre en clair
-        # KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
-        KEYCLOAK_ADMIN_PASSWORD: adminpassword
-      run: |
+      - uses: actions/checkout@v3
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      - name: Start Keycloak (dev) with docker
+        env:
+          KEYCLOAK_ADMIN: admin
+          # Optionnel: utilisez un secret GitHub au lieu de mettre en clair
+          # KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
+          KEYCLOAK_ADMIN_PASSWORD: adminpassword
+        run: |
 
 
-          # Remove any previous container (if present)
-          docker rm -f keycloak || true
+            # Remove any previous container (if present)
+            docker rm -f keycloak || true
 
-          # Start Keycloak in development mode (start-dev)
-          docker run -d --name keycloak \
-            -e KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN} \
-            -e KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD} \
-            -p 8000:8080 \
-            quay.io/keycloak/keycloak:21.1.1 start-dev
+            # Start Keycloak in development mode (start-dev)
+            docker run -d --name keycloak \
+              -e KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN} \
+              -e KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD} \
+              -p 8000:8080 \
+              quay.io/keycloak/keycloak:21.1.1 start-dev
 
-          # Wait for Keycloak to be ready (timeout ~2 minutes)
-          echo "Waiting for Keycloak to be ready on http://localhost:8000/realms/master ..."
-          for i in $(seq 1 60); do
-            if curl -fsS http://localhost:8000/realms/master >/dev/null 2>&1; then
-              echo "Keycloak is ready"
-              break
+            # Wait for Keycloak to be ready (timeout ~2 minutes)
+            echo "Waiting for Keycloak to be ready on http://localhost:8000/realms/master ..."
+            for i in $(seq 1 60); do
+              if curl -fsS http://localhost:8000/realms/master >/dev/null 2>&1; then
+                echo "Keycloak is ready"
+                break
+              fi
+              echo "Keycloak not ready yet (attempt $i/60). Sleeping 2s..."
+              sleep 2
+            done
+
+            # Fail if Keycloak never became ready
+            if ! curl -fsS http://localhost:8000/realms/master >/dev/null 2>&1; then
+              echo "Keycloak did not become ready in time"
+              docker logs keycloak || true
+              exit 1
             fi
-            echo "Keycloak not ready yet (attempt $i/60). Sleeping 2s..."
-            sleep 2
-          done
+      - name: Build with Maven
+        working-directory: server
+        run: mvn -B package --file  pom.xml
 
-          # Fail if Keycloak never became ready
-          if ! curl -fsS http://localhost:8000/realms/master >/dev/null 2>&1; then
-            echo "Keycloak did not become ready in time"
-            docker logs keycloak || true
-            exit 1
-          fi
-    - name: Build with Maven
-      working-directory: server
-      run: mvn -B package --file  pom.xml
-
-    # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
-    - name: Update dependency graph
-      uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
+      # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
+      - name: Update dependency graph
+        uses: advanced-security/maven-dependency-submission-action@v4
