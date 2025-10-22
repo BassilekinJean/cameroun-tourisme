@@ -33,8 +33,8 @@ jobs:
           env:
             MYSQL_ROOT_PASSWORD: root
             MYSQL_DATABASE: cameroun_tour
-            MYSQL_USER: testuser
-            MYSQL_PASSWORD: testpassword
+            MYSQL_USER: ${{ secrets.DB_USER_MYSQL }}
+            MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD_MYSQL }}
           options: --health-cmd="mysqladmin ping --silent" --health-interval=10s --health-timeout=5s --health-retries=10
 
         # keycloak:
