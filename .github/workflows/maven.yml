@@ -37,19 +37,19 @@ jobs:
             MYSQL_PASSWORD: testpassword
           options: --health-cmd="mysqladmin ping --silent" --health-interval=10s --health-timeout=5s --health-retries=10
 
-        keycloak:
-          image: quay.io/keycloak/keycloak:21.1.1
-          ports:
-            - 8000:8080
-          options: >-
-              --health-cmd="curl -f http://localhost:8080/realms/master || exit 1"
-              --health-interval=10s
-              --health-timeout=5s
-              --health-retries=5
-              start-dev
-          env:
-            KEYCLOAK_ADMIN: admin
-            KEYCLOAK_ADMIN_PASSWORD: admin
+        # keycloak:
+        #   image: quay.io/keycloak/keycloak:21.1.1
+        #   ports:
+        #     - 8000:8080
+        #   options: >-
+        #       --health-cmd="curl -f http://localhost:8080/realms/master || exit 1"
+        #       --health-interval=10s
+        #       --health-timeout=5s
+        #       --health-retries=5
+        #       start-dev
+        #   env:
+        #     KEYCLOAK_ADMIN: admin
+        #     KEYCLOAK_ADMIN_PASSWORD: admin
 
         mailhog:
           image: mailhog/mailhog
@@ -73,7 +73,7 @@ jobs:
         KEYCLOAK_ADMIN_PASSWORD: adminpassword
       run: |
 
-      
+
           # Remove any previous container (if present)
           docker rm -f keycloak || true
 
