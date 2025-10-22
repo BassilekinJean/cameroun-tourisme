@@ -18,7 +18,9 @@ public class PasswordValidator implements ConstraintValidator<ValidPassword, Str
        if (value.length() < minSize || value.isBlank()){
             return false;
        }
-       return false;
+        // Regex pattern: at least 8 characters, one uppercase, one lowercase, one digit, one special character
+        String passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
+        return value.matches(passwordPattern);
     }
 
 }

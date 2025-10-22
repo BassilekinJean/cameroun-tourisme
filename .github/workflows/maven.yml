@@ -15,9 +15,9 @@ permissions:
   
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "dev" ]
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [ "dev" ]
 
 
 jobs:
@@ -36,7 +36,23 @@ jobs:
             MYSQL_USER: ${{ secrets.DB_USER_MYSQL }}
             MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD_MYSQL }}
           options: --health-cmd="mysqladmin ping --silent" --health-interval=10s --health-timeout=5s --health-retries=10
-          
+
+        keycloak:
+          image: quay.io/keycloak/keycloak:21.1.1
+          ports:
+            - 8000:8080
+          env:
+            KEYCLOAK_ADMIN: admin
+            KEYCLOAK_ADMIN_PASSWORD: admin
+          options:  --health-cmd="curl -f http://localhost:8080/realms/master || exit 1" --health-interval=10s --health-timeout=5s --health-retries=10
+
+        mailhog:
+          image: mailhog/mailhog
+          ports:
+            - 8025:8025
+            - 1025:1025
+
+
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 21

@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class EmailService implements EmailServiceApi {
+public class EmailServiceImpl implements EmailServiceApi {
 
     private final OtpServiceApi otpService;
     private final JavaMailSender javaMailSender;

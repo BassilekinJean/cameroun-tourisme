@@ -1,4 +1,4 @@
-package com.cameroun_tour.tourisme.voyageur.errors;
+package com.cameroun_tour.tourisme.configuration;
 
 import java.time.LocalDateTime;
 
@@ -11,11 +11,11 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExceptionEntity {
+public class GlobalExceptionEntity {
 
     private String message;
 
-    private String uri;
+    private int code;
 
     private LocalDateTime timestamp;
 }
