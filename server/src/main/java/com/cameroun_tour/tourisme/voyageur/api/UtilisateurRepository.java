@@ -9,7 +9,6 @@ import com.cameroun_tour.tourisme.voyageur.model.UtilisateurEntity;
 
 @Repository
 public interface UtilisateurRepository extends JpaRepository<UtilisateurEntity, Long>{
-
     Optional<UtilisateurEntity> findByUserEmail(String email);
 
 }

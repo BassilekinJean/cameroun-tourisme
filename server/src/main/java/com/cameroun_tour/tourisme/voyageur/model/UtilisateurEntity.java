@@ -7,7 +7,6 @@ import org.hibernate.annotations.CurrentTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.cameroun_tour.tourisme.common.utils.Role;
-import com.cameroun_tour.tourisme.common.utils.validators.ValidPassword;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -46,7 +45,6 @@ public class UtilisateurEntity {
 
     @Column(nullable = false)
     @NotBlank(message = "Le mot de passe est obligatoire")
-    @ValidPassword
     @Size(min = 8, message = "Le mot de passe doit contenir au moins 8 caractères")
     private String userPassword;
 

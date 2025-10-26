@@ -1,4 +1,4 @@
-package com.cameroun_tour.tourisme.auth.api;
+package com.cameroun_tour.tourisme.auth;
 
 public interface AuthentificationService {
 

@@ -2,14 +2,18 @@ package com.cameroun_tour.tourisme.voyageur.api;
 
 import java.util.Optional;
 
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import com.cameroun_tour.tourisme.voyageur.UserProfileDto;
 import com.cameroun_tour.tourisme.voyageur.UserRegistrationDto;
 import com.cameroun_tour.tourisme.voyageur.UserService;
+import com.cameroun_tour.tourisme.voyageur.errors.EmailAlreadyExistsException;
 import com.cameroun_tour.tourisme.voyageur.errors.UserNotFoundException;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurEntity;
 
@@ -17,7 +21,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 @Tag(name = "User Service", description = "Logique Métier de gestion des comptes utilisateurs")
 public class UtilisateurServiceImpl implements UserService {
@@ -26,27 +29,37 @@ public class UtilisateurServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public void createUserAccount(UserRegistrationDto registrationDto) throws MethodArgumentNotValidException {
-        UtilisateurEntity newUser = new UtilisateurEntity();
+    @Transactional(rollbackFor = Exception.class)
+    public void createUserAccount(UserRegistrationDto registrationDto){
+        
+        try {
+            UtilisateurEntity newUser = new UtilisateurEntity();
 
-        newUser.setNomComplet(registrationDto.nomComplet());
-        newUser.setPaysOrigine(registrationDto.paysOrigine());
-        newUser.setUserEmail(registrationDto.email());
-        newUser.setUserPassword(passwordEncoder.encode(registrationDto.password()));
+            newUser.setNomComplet(registrationDto.nomComplet());
+            newUser.setPaysOrigine(registrationDto.paysOrigine());
+            newUser.setUserEmail(registrationDto.email());
+            newUser.setUserPassword(passwordEncoder.encode(registrationDto.password()));
 
-        userRepository.save(newUser);
+            userRepository.saveAndFlush(newUser);
+        } catch (DataIntegrityViolationException e) {
+            throw new EmailAlreadyExistsException("Un utilisateur avec cet email existe déjà.");
+        }
+        
 
     }
 
     @Override
+    @Transactional
     public void deleteAccountWithId(Long id) {
         UtilisateurEntity userToDelete = this.userRepository.findById(id)
-                                                            .orElseThrow(() -> 
-                                                                            new UserNotFoundException("Aucun utilisateur trouver"));
+                                                    .orElseThrow(() -> 
+                                                    new UserNotFoundException("Aucun utilisateur trouver"));
+
         userRepository.deleteById(userToDelete.getId());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserProfileDto getUserProfile(Long id){
         Optional<UtilisateurEntity> user = userRepository.findById(id);
         if (user.isEmpty()) {
@@ -61,6 +74,7 @@ public class UtilisateurServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void updateUserProfile(UserProfileDto userProfile, Long id){
         Optional<UtilisateurEntity> userOpt = userRepository.findById(id);
 
@@ -77,11 +91,24 @@ public class UtilisateurServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UtilisateurEntity findByEmail(String email){
 
         Optional <UtilisateurEntity> utilisateur = this.userRepository.findByUserEmail(email);
         return utilisateur.orElseThrow(() -> 
                                             new UserNotFoundException("L'utilisateur avec l'email " + email + " est introuvable"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UtilisateurEntity> getAllUser(int page, int size, String sortBy, String sortDir) {
+
+        var sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
+                                                : Sort.by(sortBy).descending();
+
+        var pageable = PageRequest.of(page, size, sort);
+
+        return userRepository.findAll(pageable);
     }
 
 }

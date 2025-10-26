@@ -15,6 +15,7 @@ public record UserProfileDto(
     @Email(message = "Format d'email invalide !!!")
     String email,
 
+    @NotBlank(message = "Le pays d'origine est obligatoire")
     String paysOrigine,
 
     @NotBlank(message = "Le mot de passe est obligatoire !!!!")
@@ -22,7 +23,7 @@ public record UserProfileDto(
     @ValidPassword
     String password,
 
-     String photoProfile
+    String photoProfile
 ) {
 
 }
