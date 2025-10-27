@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.cameroun_tour.tourisme.voyageur.UpdateUserPasswordDto;
 import com.cameroun_tour.tourisme.voyageur.UserProfileDto;
 import com.cameroun_tour.tourisme.voyageur.UserRegistrationDto;
 import com.cameroun_tour.tourisme.voyageur.UserService;
@@ -69,7 +70,6 @@ public class UtilisateurServiceImpl implements UserService {
         return new UserProfileDto(u.getNomComplet(),
                                   u.getUserEmail(),
                                   u.getPaysOrigine(),
-                                  u.getUserPassword(),
                                   u.getPhotoProfile());
     }
 
@@ -85,7 +85,6 @@ public class UtilisateurServiceImpl implements UserService {
         user.setNomComplet(userProfile.nomComplet());
         user.setPaysOrigine(userProfile.paysOrigine());
         user.setUserEmail(userProfile.email());
-        user.setUserPassword(passwordEncoder.encode(userProfile.password()));
 
         userRepository.save(user);
     }
@@ -109,6 +108,19 @@ public class UtilisateurServiceImpl implements UserService {
         var pageable = PageRequest.of(page, size, sort);
 
         return userRepository.findAll(pageable);
+    }
+
+    @Override
+    @Transactional
+    public void updatePassword(UpdateUserPasswordDto userPasswordDto, String email) {
+        Optional<UtilisateurEntity> user = userRepository.findByUserEmail(email);
+
+        if (user == null) {
+            throw new UserNotFoundException("L'utilisateur avec l'email " + email + " est introuvable");
+        }
+        user.get().setUserPassword(userPasswordDto.validatePassword());
+        
+        userRepository.save(user.get());
     }
 
 }

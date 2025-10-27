@@ -15,6 +15,8 @@ public interface UserService {
 
     void updateUserProfile(UserProfileDto userProfile, Long id);
 
+    void updatePassword(UpdateUserPasswordDto userPasswordDto, String email);
+
     UtilisateurEntity findByEmail(String email);
     
     Page<UtilisateurEntity> getAllUser(int page, int size, String sortBy, String sortDir);

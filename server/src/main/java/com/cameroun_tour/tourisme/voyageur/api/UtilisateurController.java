@@ -9,6 +9,7 @@ import com.cameroun_tour.tourisme.voyageur.UserRegistrationDto;
 import com.cameroun_tour.tourisme.voyageur.UserService;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurEntity;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -17,11 +18,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+
 
 
 
@@ -41,6 +45,7 @@ public class UtilisateurController {
     }
 
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<UserProfileDto> getProfileWithId(@PathVariable Long id) {
         UserProfileDto searchedUser = this.userService.getUserProfile(id);
         return ResponseEntity.status(HttpStatus.FOUND).body(searchedUser);
@@ -53,6 +58,13 @@ public class UtilisateurController {
                                                                     @RequestParam String sortDir) {
 
         return ResponseEntity.ok(userService.getAllUser(page, size, sort, sortDir)) ;
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<UserProfileDto> putMethodName(@RequestBody UserProfileDto entity, HttpServletRequest request) {
+        
+        
+        return null;
     }
     
 }

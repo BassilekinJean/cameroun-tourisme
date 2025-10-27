@@ -4,19 +4,14 @@ package com.cameroun_tour.tourisme.voyageur;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-public record UserProfileDto(
-
-    @NotBlank(message = "Le nom est obligatoire")
-    String nomComplet,
+public record UserLoginDto(
 
     @NotBlank(message = "L'email est obligatoire !!!")
     @Email(message = "Format d'email invalide !!!")
     String email,
 
-    @NotBlank(message = "Le pays d'origine est obligatoire")
-    String paysOrigine,
-
-    String photoProfile
+    @NotBlank(message = "Le mot de passe est obligatoire !!!!")
+    String password
 ) {
 
 }
