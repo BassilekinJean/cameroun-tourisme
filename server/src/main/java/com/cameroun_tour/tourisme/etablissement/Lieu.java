@@ -1,4 +1,4 @@
-package com.cameroun_tour.tourisme.voyageur.model;
+package com.cameroun_tour.tourisme.etablissement;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -6,61 +6,64 @@ import java.util.List;
 import org.hibernate.annotations.CurrentTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.cameroun_tour.tourisme.common.utils.Role;
+import com.cameroun_tour.tourisme.common.utils.enums.TypeEtablissement;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-
 
 @Data
 @Entity
-@NoArgsConstructor
-@AllArgsConstructor
-public class UtilisateurEntity {
+public class Lieu {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true)
     @NotBlank(message = "Le nom est obligatoire")
-    private String nomComplet;
+    private String nom;
+
+    @NotBlank(message = "Une description est nécessaire")
+    private String description;
 
     @Column(nullable = false, unique = true)
     @NotBlank(message = "L'email est obligatoire")
-    @Email(message = "Format d'email invalide")
-    private String userEmail;
+    @Email(message = "Format d'email incorrecte")
+    private String email;
 
-    @Column(nullable = false)
-    @NotBlank(message = "Le mot de passe est obligatoire")
-    @Size(min = 8, message = "Le mot de passe doit contenir au moins 8 caractères")
-    private String userPassword;
+    @NotBlank(message = "Veuillez fournir un mot de passe")
+    private String password;
 
-    private String paysOrigine;
+    @NotBlank(message = "Veuillez fourni un numéro de contact")
+    private String telephone;
 
     private String photoProfile;
 
-    @Enumerated(EnumType.STRING)
-    private Role role = Role.USER;
+    private String adresse;
+
+    @NotBlank(message = "Précisez la ville")
+    private String ville;
 
     @ElementCollection
-    private List<String> listeDesFavoris;
+    @NotNull(message = "Vous de devez ajouter au moins 1 image des Lieux")
+    private List<String> images;
+
+    @Enumerated(EnumType.STRING)
+    private TypeEtablissement categorie;
 
     @CurrentTimestamp
     @Column(updatable = false)
-    private LocalDateTime dateCreation;
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;

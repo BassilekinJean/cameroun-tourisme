@@ -4,10 +4,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.cameroun_tour.tourisme.voyageur.UserProfileDto;
-import com.cameroun_tour.tourisme.voyageur.UserRegistrationDto;
 import com.cameroun_tour.tourisme.voyageur.UserService;
-import com.cameroun_tour.tourisme.voyageur.model.UtilisateurEntity;
+import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
+import com.cameroun_tour.tourisme.voyageur.model.UserProfileDto;
+import com.cameroun_tour.tourisme.voyageur.model.UserRegistrationDto;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -37,7 +37,7 @@ public class UtilisateurController {
     private final UserService userService;
 
     @PostMapping(path = "/create", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<UserRegistrationDto> createAnAccount(@Valid@RequestBody UserRegistrationDto registerUser) 
+    public ResponseEntity<UserRegistrationDto> createAnAccount(@Valid @RequestBody UserRegistrationDto registerUser) 
         throws MethodArgumentNotValidException, DataIntegrityViolationException
     {
         this.userService.createUserAccount(registerUser);
@@ -61,9 +61,11 @@ public class UtilisateurController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<UserProfileDto> putMethodName(@RequestBody UserProfileDto entity, HttpServletRequest request) {
+    public ResponseEntity<UserProfileDto> updateProfilInfo(@RequestBody UserProfileDto entity, HttpServletRequest request) {
         
-        
+        String authHeader = request.getHeader("Authorization");
+
+        userService.updateUserProfile(entity, authHeader);
         return null;
     }
     

@@ -1,4 +1,5 @@
-package com.cameroun_tour.tourisme.voyageur;
+package com.cameroun_tour.tourisme.voyageur.model;
+
 
 import com.cameroun_tour.tourisme.common.utils.validators.ValidPassword;
 

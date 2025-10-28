@@ -1,18 +1,16 @@
 package com.cameroun_tour.tourisme.evaluation.model;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 
 import lombok.Data;
 
 @Entity
-@Table(name = "commentaire")
 @Data
 public class Commentaire {
 
@@ -25,6 +23,6 @@ public class Commentaire {
 
 	private String auteurEmail;
 
-	private Instant dateCreation = Instant.now();
+	private LocalDateTime dateCreation = LocalDateTime.now();
 
 }

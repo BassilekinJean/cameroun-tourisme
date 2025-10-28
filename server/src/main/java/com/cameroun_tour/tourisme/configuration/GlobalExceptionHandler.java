@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.cameroun_tour.tourisme.common.utils.ApiErrorResponse;
 
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestControllerAdvice
 @Order(Ordered.LOWEST_PRECEDENCE)
 public class GlobalExceptionHandler {
@@ -70,8 +72,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGenericException(Exception ex) {
-        // Log l'erreur ici pour le débogage
-        // log.error("Unhandled exception occurred", ex);
+        log.error("Unhandled exception occurred", ex);
         ApiErrorResponse body = new ApiErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Une erreur interne est survenue.", "Internal Server Error");
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }

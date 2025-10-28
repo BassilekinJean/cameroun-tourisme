@@ -85,24 +85,24 @@ public class SecurityConfig {
 
         @SuppressWarnings("unchecked")
         private void extractRolesFromClaim(Jwt jwt, String claimName, Collection<GrantedAuthority> authorities, String resource) {
-        Map<String, Object> claim = jwt.getClaim(claimName);
-        if (claim != null && claim.containsKey("roles")) {
-            List<String> roles = (List<String>) claim.get("roles");
-            for (String role : roles) {
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+            Map<String, Object> claim = jwt.getClaim(claimName);
+            if (claim != null && claim.containsKey("roles")) {
+                List<String> roles = (List<String>) claim.get("roles");
+                for (String role : roles) {
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                }
             }
-        }
 
-        if (resource != null) {
-            Map<String, Object> resourceAccess = jwt.getClaim(claimName);
-            if (resourceAccess != null && resourceAccess.containsKey(resource)) {
-                List<String> resourceRoles = (List<String>) ((Map<String, Object>) resourceAccess.get(resource)).get("roles");
-                if (resourceRoles != null) {
-                    for (String role : resourceRoles) {
-                        authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+            if (resource != null) {
+                Map<String, Object> resourceAccess = jwt.getClaim(claimName);
+                if (resourceAccess != null && resourceAccess.containsKey(resource)) {
+                    List<String> resourceRoles = (List<String>) ((Map<String, Object>) resourceAccess.get(resource)).get("roles");
+                    if (resourceRoles != null) {
+                        for (String role : resourceRoles) {
+                            authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                        }
                     }
                 }
             }
         }
-    }
 }

@@ -10,13 +10,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.cameroun_tour.tourisme.voyageur.UpdateUserPasswordDto;
-import com.cameroun_tour.tourisme.voyageur.UserProfileDto;
-import com.cameroun_tour.tourisme.voyageur.UserRegistrationDto;
 import com.cameroun_tour.tourisme.voyageur.UserService;
+import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.errors.EmailAlreadyExistsException;
 import com.cameroun_tour.tourisme.voyageur.errors.UserNotFoundException;
-import com.cameroun_tour.tourisme.voyageur.model.UtilisateurEntity;
+import com.cameroun_tour.tourisme.voyageur.model.UpdateUserPasswordDto;
+import com.cameroun_tour.tourisme.voyageur.model.UserProfileDto;
+import com.cameroun_tour.tourisme.voyageur.model.UserRegistrationDto;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -32,13 +32,12 @@ public class UtilisateurServiceImpl implements UserService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void createUserAccount(UserRegistrationDto registrationDto){
-        
         try {
             UtilisateurEntity newUser = new UtilisateurEntity();
-
             newUser.setNomComplet(registrationDto.nomComplet());
             newUser.setPaysOrigine(registrationDto.paysOrigine());
             newUser.setUserEmail(registrationDto.email());
+            newUser.setPhotoProfile(null);
             newUser.setUserPassword(passwordEncoder.encode(registrationDto.password()));
 
             userRepository.saveAndFlush(newUser);
@@ -75,7 +74,9 @@ public class UtilisateurServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void updateUserProfile(UserProfileDto userProfile, Long id){
+    public void updateUserProfile(UserProfileDto userProfile, String token){
+
+        Long id =1L;
         Optional<UtilisateurEntity> userOpt = userRepository.findById(id);
 
         if (userOpt.isEmpty()) {
@@ -112,7 +113,10 @@ public class UtilisateurServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void updatePassword(UpdateUserPasswordDto userPasswordDto, String email) {
+    public void updatePassword(UpdateUserPasswordDto userPasswordDto, String token) {
+
+        String email = "";
+
         Optional<UtilisateurEntity> user = userRepository.findByUserEmail(email);
 
         if (user == null) {

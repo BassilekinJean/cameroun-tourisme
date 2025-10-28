@@ -1,5 +1,10 @@
 package com.cameroun_tour.tourisme.etablissement;
 
+import com.cameroun_tour.tourisme.etablissement.model.EtablissementRegistrationDto;
+
 public interface EtablissementServiceApi {
-    // define public contracts as needed later
+
+    void registerEtablissement(EtablissementRegistrationDto dto);
+
+    
 }
