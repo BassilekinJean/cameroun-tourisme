@@ -18,13 +18,16 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 @Component
+@AllArgsConstructor
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private final JWTutils jwtService;
+    
     private final UserDetailsService userDetailsService;
     @Value("${jwt.access-token.cookie-name}")
     private String accessTokenCookieName;
@@ -58,7 +61,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         // 3. Valider (le reste est inchangé)
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-            if (jwtService.isTokenValid(jwt, userDetails)) {
+
+            // On vérifie si le token est valide ET s'il n'est PAS dans la blacklist Redis
+            boolean isTokenValid = jwtService.isTokenValid(jwt, userDetails);
+            boolean isTokenInvalidated = jwtService.isTokenInvalidated(jwt); // L'appel à Redis
+
+            if (isTokenValid && !isTokenInvalidated) {
+                // Le token est 100% valide, on authentifie l'utilisateur
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities()
                 );

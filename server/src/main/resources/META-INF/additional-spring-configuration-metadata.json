@@ -1,19 +1,5 @@
 {"properties": [
-  {
-    "name": "jwt.secret",
-    "type": "java.lang.String",
-    "description": "A description for 'jwt.secret'"
-  },
-  {
-    "name": "jwt.access-token.expiration",
-    "type": "java.lang.String",
-    "description": "A description for 'jwt.access-token.expiration'"
-  },
-  {
-    "name": "jwt.refresh-token.expiration",
-    "type": "java.lang.String",
-    "description": "A description for 'jwt.refresh-token.expiration'"
-  },
+  
   {
     "name": "jwt.access-token.cookie-name",
     "type": "java.lang.String",
@@ -28,5 +14,20 @@
     "name": "app.oauth2.redirect-uri",
     "type": "java.lang.String",
     "description": "A description for 'app.oauth2.redirect-uri'"
+  },
+  {
+    "name": "jwt.secret-key",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.secret-key'"
+  },
+  {
+    "name": "jwt.access-token-expiration",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.access-token-expiration'"
+  },
+  {
+    "name": "jwt.refresh-token-expiration",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.refresh-token-expiration'"
   }
 ]}

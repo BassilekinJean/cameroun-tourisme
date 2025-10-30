@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.cameroun_tour.tourisme.common.utils.ApiErrorResponse;
 
 
-@RestControllerAdvice(basePackages = "com.cameroun_tour.tourisme.voyageur.api")
+@RestControllerAdvice(basePackages = "com.cameroun_tour.tourisme.voyageur")
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class VoyageurExceptionHandler {
 
@@ -23,7 +23,7 @@ public class VoyageurExceptionHandler {
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<ApiErrorResponse> handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
-        ApiErrorResponse body = new ApiErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage(), "Conflict");
+        ApiErrorResponse body = new ApiErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage(), "Conflict, Email Already Exists");
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
 

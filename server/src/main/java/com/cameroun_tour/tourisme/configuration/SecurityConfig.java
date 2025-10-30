@@ -1,108 +1,111 @@
 package com.cameroun_tour.tourisme.configuration;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.cameroun_tour.tourisme.common.auth.AuthUserDetailsService;
+import com.cameroun_tour.tourisme.common.auth.JWTutils;
+import com.cameroun_tour.tourisme.common.auth.JwtAuthFilter;
+import com.cameroun_tour.tourisme.common.auth.Oauth2AuthenticationSuccessHandler;
+
+import lombok.RequiredArgsConstructor;
+
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-	@Bean
-	public PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
+    private final JWTutils jwtUtils;
+    private final AuthUserDetailsService authUserDetailsService;
+    
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+    
+    @Bean
+    public JwtAuthFilter jwtAuthFilter() {
+        return new JwtAuthFilter(jwtUtils, authUserDetailsService);
+    }
 
-	@Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-                http.authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll() // Permit all requests
-                )
-                .csrf(csrf -> csrf.disable()) // Disable CSRF protection
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .formLogin(form -> form.disable()) // Disable login screen
-                .httpBasic(basic -> basic.disable()); // Disable HTTP Basic Auth
+    @SuppressWarnings("deprecation")
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(authUserDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
+    
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                            ObjectProvider<Oauth2AuthenticationSuccessHandler> oAuth2SuccessHandlerProvider) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .formLogin(form -> form.disable())
+            .httpBasic(basic -> basic.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/**", "/oauth2/**", "/login/oauth2/code/**").permitAll()
+                .anyRequest().authenticated()
+            )
+            
+            .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class)
+            .oauth2Login(oauth2 -> { 
+                Oauth2AuthenticationSuccessHandler handler = oAuth2SuccessHandlerProvider.getIfAvailable();
+                if (handler != null) {
+                    oauth2.successHandler(handler);
+                }}
+            );
 
         return http.build();
-        }
-//         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//         http.authorizeHttpRequests(auth -> auth
-//                 .requestMatchers("/cars").hasAuthority("ROLE_basic-role") 
-//                 .anyRequest().authenticated()
-//         )
-//                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
-//                 .csrf(csrf -> csrf.disable())
-//                 .cors(cors -> cors.configurationSource(corsConfigurationSource()));
+    }
+    
+    @Bean
+    public FilterRegistrationBean<JwtAuthFilter> jwtAuthFilterRegistration() {
+        FilterRegistrationBean<JwtAuthFilter> registration = new FilterRegistrationBean<>(jwtAuthFilter());
+        registration.setEnabled(false); // Désactive l'enregistrement automatique (Spring Security s'en chargera)
+        return registration;
+    }
 
-//         return http.build();
-//     }
+    @Bean
+    public AuthenticationManager authenticationManager(HttpSecurity http, PasswordEncoder passwordEncoder) throws Exception {
 
-        @Bean
-        public CorsConfigurationSource corsConfigurationSource() {
-                CorsConfiguration corsConfiguration = new CorsConfiguration();
-                corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173"));
-                corsConfiguration.setAllowedMethods(List.of("GET", "POST"));
-                corsConfiguration.setAllowCredentials(true);
-                corsConfiguration.setAllowedHeaders(List.of("*"));
-                corsConfiguration.setMaxAge(3600L);
-                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-                source.registerCorsConfiguration("/**", corsConfiguration);
-                return source;
-        }
+        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
 
-        @Bean
-        public JwtAuthenticationConverter jwtAuthenticationConverter() {
-                JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-                jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwt -> {
-                Collection<GrantedAuthority> authorities = new ArrayList<>();
+        authenticationManagerBuilder.userDetailsService(authUserDetailsService).passwordEncoder(passwordEncoder);
+        
+        return authenticationManagerBuilder.build();
+    }
+    
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration corsConfiguration = new CorsConfiguration();
+        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173"));
+        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        corsConfiguration.setAllowCredentials(true);
+        corsConfiguration.setAllowedHeaders(List.of("*")); 
+        corsConfiguration.setMaxAge(3600L);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", corsConfiguration);
+        return source;
+    }
 
-                extractRolesFromClaim(jwt, "realm_access", authorities);
-                extractRolesFromClaim(jwt, "resource_access", authorities, "react-app");
-
-                return authorities;
-                });
-
-                return jwtAuthenticationConverter;
-        }
-
-        private void extractRolesFromClaim(Jwt jwt, String claimName, Collection<GrantedAuthority> authorities) {
-                extractRolesFromClaim(jwt, claimName, authorities, null);
-        }
-
-        @SuppressWarnings("unchecked")
-        private void extractRolesFromClaim(Jwt jwt, String claimName, Collection<GrantedAuthority> authorities, String resource) {
-            Map<String, Object> claim = jwt.getClaim(claimName);
-            if (claim != null && claim.containsKey("roles")) {
-                List<String> roles = (List<String>) claim.get("roles");
-                for (String role : roles) {
-                    authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
-                }
-            }
-
-            if (resource != null) {
-                Map<String, Object> resourceAccess = jwt.getClaim(claimName);
-                if (resourceAccess != null && resourceAccess.containsKey(resource)) {
-                    List<String> resourceRoles = (List<String>) ((Map<String, Object>) resourceAccess.get(resource)).get("roles");
-                    if (resourceRoles != null) {
-                        for (String role : resourceRoles) {
-                            authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
-                        }
-                    }
-                }
-            }
-        }
 }

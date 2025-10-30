@@ -1,15 +1,12 @@
 package com.cameroun_tour.tourisme.voyageur;
 
 import org.springframework.data.domain.Page;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import com.cameroun_tour.tourisme.voyageur.model.UpdateUserPasswordDto;
 import com.cameroun_tour.tourisme.voyageur.model.UserProfileDto;
-import com.cameroun_tour.tourisme.voyageur.model.UserRegistrationDto;
+
 
 public interface UserService {
-
-    void createUserAccount(UserRegistrationDto registrationDto) throws MethodArgumentNotValidException;
 
     void deleteAccountWithId(Long id);
 

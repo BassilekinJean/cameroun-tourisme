@@ -7,25 +7,21 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cameroun_tour.tourisme.voyageur.UserService;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.model.UserProfileDto;
-import com.cameroun_tour.tourisme.voyageur.model.UserRegistrationDto;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
-
 
 
 
@@ -36,12 +32,18 @@ public class UtilisateurController {
 
     private final UserService userService;
 
-    @PostMapping(path = "/create", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<UserRegistrationDto> createAnAccount(@Valid @RequestBody UserRegistrationDto registerUser) 
-        throws MethodArgumentNotValidException, DataIntegrityViolationException
-    {
-        this.userService.createUserAccount(registerUser);
-        return  ResponseEntity.status(HttpStatus.CREATED).body(registerUser);
+    @GetMapping(path = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UserProfileDto> getMyProfile(Authentication authentication) {
+        String userEmail = authentication.getName(); 
+        UtilisateurEntity user = this.userService.findByEmail(userEmail); 
+        
+        UserProfileDto profile = new UserProfileDto(
+            user.getNomComplet(), 
+            user.getUserEmail(), 
+            user.getPaysOrigine(), 
+            user.getPhotoProfile()
+        );
+        return ResponseEntity.ok(profile);
     }
 
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -60,13 +62,14 @@ public class UtilisateurController {
         return ResponseEntity.ok(userService.getAllUser(page, size, sort, sortDir)) ;
     }
 
+    //à faire
     @PutMapping("/update")
-    public ResponseEntity<UserProfileDto> updateProfilInfo(@RequestBody UserProfileDto entity, HttpServletRequest request) {
+    public ResponseEntity<UserProfileDto> updateProfilInfo(@Valid @RequestBody UserProfileDto entity, HttpServletRequest request) {
         
         String authHeader = request.getHeader("Authorization");
 
         userService.updateUserProfile(entity, authHeader);
-        return null;
+        return ResponseEntity.ok(entity);
     }
     
 }

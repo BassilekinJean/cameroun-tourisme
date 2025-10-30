@@ -2,21 +2,17 @@ package com.cameroun_tour.tourisme.voyageur.api;
 
 import java.util.Optional;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cameroun_tour.tourisme.voyageur.UserService;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
-import com.cameroun_tour.tourisme.voyageur.errors.EmailAlreadyExistsException;
 import com.cameroun_tour.tourisme.voyageur.errors.UserNotFoundException;
 import com.cameroun_tour.tourisme.voyageur.model.UpdateUserPasswordDto;
 import com.cameroun_tour.tourisme.voyageur.model.UserProfileDto;
-import com.cameroun_tour.tourisme.voyageur.model.UserRegistrationDto;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -27,26 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class UtilisateurServiceImpl implements UserService {
 
     private final UtilisateurRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
 
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void createUserAccount(UserRegistrationDto registrationDto){
-        try {
-            UtilisateurEntity newUser = new UtilisateurEntity();
-            newUser.setNomComplet(registrationDto.nomComplet());
-            newUser.setPaysOrigine(registrationDto.paysOrigine());
-            newUser.setUserEmail(registrationDto.email());
-            newUser.setPhotoProfile(null);
-            newUser.setUserPassword(passwordEncoder.encode(registrationDto.password()));
-
-            userRepository.saveAndFlush(newUser);
-        } catch (DataIntegrityViolationException e) {
-            throw new EmailAlreadyExistsException("Un utilisateur avec cet email existe déjà.");
-        }
-        
-
-    }
 
     @Override
     @Transactional

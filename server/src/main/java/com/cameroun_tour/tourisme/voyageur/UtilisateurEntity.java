@@ -1,11 +1,14 @@
 package com.cameroun_tour.tourisme.voyageur;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 import org.hibernate.annotations.CurrentTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import com.cameroun_tour.tourisme.common.utils.enums.Role;
 
@@ -33,7 +36,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-public class UtilisateurEntity {
+public class UtilisateurEntity implements UserDetails{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -69,7 +72,16 @@ public class UtilisateurEntity {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @Column(length = 512) // Un refresh token peut être long
-    private String refreshToken;
-    private Instant refreshTokenExpiry;
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(role.name()));
+    }
+    @Override
+    public String getPassword() {
+        return this.userPassword;
+    }
+    @Override
+    public String getUsername() {
+        return this.userEmail;
+    }
 }
