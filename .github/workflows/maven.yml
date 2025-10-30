@@ -103,6 +103,9 @@ jobs:
             fi
       - name: Build with Maven
         working-directory: server
+        env:
+          DB_USER_MYSQL: ${{ secrets.DB_USER_MYSQL || 'testuser' }}
+          DB_PASSWORD_MYSQL: ${{ secrets.DB_PASSWORD_MYSQL || 'testpassword' }}
         run: mvn -B package --file  pom.xml
 
       # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
