@@ -1,9 +1,7 @@
 package com.cameroun_tour.tourisme.voyageur.api;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -13,8 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.cameroun_tour.tourisme.voyageur.UserService;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.errors.UserNotFoundException;
-import com.cameroun_tour.tourisme.voyageur.events.CommentairePublieEvent;
-import com.cameroun_tour.tourisme.voyageur.model.CommentaireCreationDto;
 import com.cameroun_tour.tourisme.voyageur.model.UpdateUserPasswordDto;
 import com.cameroun_tour.tourisme.voyageur.model.UserProfileDto;
 
@@ -26,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 @Tag(name = "User Service", description = "Logique Métier de gestion des comptes utilisateurs")
 public class UtilisateurServiceImpl implements UserService {
 
-    private final ApplicationEventPublisher events;
     private final UtilisateurRepository userRepository;
 
 
@@ -109,20 +104,20 @@ public class UtilisateurServiceImpl implements UserService {
         userRepository.save(user.get());
     }
 
-    @Override
-    public void publierCommentaire(String email, CommentaireCreationDto comment) {
-        // 1. Valider que l'utilisateur existe (optionnel, peut être fait par Spring Security)
-        userRepository.findByUserEmail(email)
-            .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé"));
+    // @Override
+    // public void publierCommentaire(String email, CommentaireCreationDto comment) {
+    //     // 1. Valider que l'utilisateur existe (optionnel, peut être fait par Spring Security)
+    //     userRepository.findByUserEmail(email)
+    //         .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé"));
 
-        // 2. Publier l'événement pour que le module 'evaluation' le traite
-        CommentairePublieEvent event = new CommentairePublieEvent(
-            email,
-            comment.message(),
-            comment.note(),
-            LocalDateTime.now()
-        );
-        events.publishEvent(event);
-    }
+    //     // 2. Publier l'événement pour que le module 'evaluation' le traite
+    //     CommentairePublieEvent event = new CommentairePublieEvent(
+    //         email,
+    //         comment.message(),
+    //         comment.note(),
+    //         LocalDateTime.now()
+    //     );
+    //     events.publishEvent(event);
+    // }
 
 }

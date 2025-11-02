@@ -2,7 +2,7 @@ package com.cameroun_tour.tourisme.etablissement.model;
 
 import java.util.List;
 
-import com.cameroun_tour.tourisme.common.utils.enums.TypeEtablissement;
+import com.cameroun_tour.tourisme.common.utils.enums.TypeLieu;
 import com.cameroun_tour.tourisme.common.utils.validators.ValidPassword;
 
 import jakarta.persistence.ElementCollection;
@@ -12,7 +12,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record EtablissementRegistrationDto(
+public record LieuRegistrationDto(
 
     @NotBlank(message = "Le nom est obligatoire")
     String nom,
@@ -47,7 +47,7 @@ public record EtablissementRegistrationDto(
     List<String> images,
 
     @Enumerated(EnumType.STRING)
-    TypeEtablissement categorie
+    TypeLieu categorie
 
 ) {
 

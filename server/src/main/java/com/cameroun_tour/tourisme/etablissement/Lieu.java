@@ -6,7 +6,7 @@ import java.util.List;
 import org.hibernate.annotations.CurrentTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.cameroun_tour.tourisme.common.utils.enums.TypeEtablissement;
+import com.cameroun_tour.tourisme.common.utils.enums.TypeLieu;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -59,7 +59,7 @@ public class Lieu {
     private List<String> images;
 
     @Enumerated(EnumType.STRING)
-    private TypeEtablissement categorie;
+    private TypeLieu categorie;
 
     @CurrentTimestamp
     @Column(updatable = false)

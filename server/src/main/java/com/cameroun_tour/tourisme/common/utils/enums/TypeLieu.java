@@ -1,6 +1,6 @@
 package com.cameroun_tour.tourisme.common.utils.enums;
 
-public enum TypeEtablissement {
+public enum TypeLieu {
 
     RESTAURATION,
     HOTEL,

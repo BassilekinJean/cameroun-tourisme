@@ -2,12 +2,12 @@ package com.cameroun_tour.tourisme.evaluation;
 
 import org.springframework.data.domain.Page;
 
+import com.cameroun_tour.tourisme.common.events.CommentairePublieEvent;
 import com.cameroun_tour.tourisme.evaluation.model.CommentaireDto;
-import com.cameroun_tour.tourisme.voyageur.events.CommentairePublieEvent;
 
 public interface CommentaireServiceApi {
 
-    void onCommentairePublie(CommentairePublieEvent event);
+    void onCommentairePublier(CommentairePublieEvent event);
 
     void editCommentaire(CommentaireDto comment);
 

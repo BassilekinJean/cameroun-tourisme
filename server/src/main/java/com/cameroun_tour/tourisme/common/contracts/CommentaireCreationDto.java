@@ -1,4 +1,4 @@
-package com.cameroun_tour.tourisme.voyageur.model;
+package com.cameroun_tour.tourisme.common.contracts;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

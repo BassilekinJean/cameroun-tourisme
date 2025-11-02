@@ -42,6 +42,6 @@ public class Commentaire {
 	@JoinColumn(name = "lieu_id")
 	private Lieu lieuConcerne;
 
-	private LocalDateTime dateCreation = LocalDateTime.now();
+	private LocalDateTime dateCreation;
 
 }

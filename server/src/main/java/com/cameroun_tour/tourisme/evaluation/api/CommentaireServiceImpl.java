@@ -1,15 +1,18 @@
 package com.cameroun_tour.tourisme.evaluation.api;
 
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+import com.cameroun_tour.tourisme.common.events.CommentairePublieEvent;
+import com.cameroun_tour.tourisme.etablissement.EtablissementServiceApi;
+import com.cameroun_tour.tourisme.etablissement.Lieu;
 import com.cameroun_tour.tourisme.evaluation.Commentaire;
 import com.cameroun_tour.tourisme.evaluation.CommentaireServiceApi;
 import com.cameroun_tour.tourisme.evaluation.errors.CommentNotFoundException;
 import com.cameroun_tour.tourisme.evaluation.model.CommentaireDto;
 import com.cameroun_tour.tourisme.voyageur.UserService;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
-import com.cameroun_tour.tourisme.voyageur.events.CommentairePublieEvent;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,18 +23,21 @@ import lombok.RequiredArgsConstructor;
 public class CommentaireServiceImpl implements CommentaireServiceApi {
 
     private final CommentaireRepository commentaireRepository;
-    private final UserService utilisateurService; // Pour récupérer l'entité auteur
+    private final UserService utilisateurService; 
+    private final EtablissementServiceApi etablissementService;
 
-    public void onCommentairePublie(CommentairePublieEvent event) {
-        // Logique pour sauvegarder le commentaire
+    @Override
+    @EventListener
+    public void onCommentairePublier(CommentairePublieEvent event) {
         UtilisateurEntity auteur = utilisateurService.findByEmail(event.auteurEmail());
+        Lieu lieu = etablissementService.findById(event.lieuId());
 
         Commentaire commentaire = new Commentaire();
         commentaire.setMessage(event.message());
         commentaire.setNote(event.note());
         commentaire.setAuteur(auteur);
         commentaire.setDateCreation(event.datePublication());
-        // Associer le commentaire à l'établissement via event.etablissementId()
+        commentaire.setLieuConcerne(lieu);
 
         commentaireRepository.save(commentaire);
     }
