@@ -25,6 +25,7 @@ public class EtablissementServiceImpl implements EtablissementServiceApi {
     @Override
     public void registerLieu(LieuRegistrationDto dto) {
 
+        
     }
 
     @Override

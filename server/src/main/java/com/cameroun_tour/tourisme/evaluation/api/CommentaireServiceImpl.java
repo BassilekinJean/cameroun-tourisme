@@ -2,6 +2,8 @@ package com.cameroun_tour.tourisme.evaluation.api;
 
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.cameroun_tour.tourisme.common.events.CommentairePublieEvent;
@@ -66,8 +68,13 @@ public class CommentaireServiceImpl implements CommentaireServiceApi {
     }
 
     @Override
-    public Page<CommentaireDto> listerLesCommentairesLieu(Long lieuId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'listerLesCommentairesLieu'");
+    public Page<Commentaire> listerLesCommentairesLieu(Long lieuId, int page, int size, String sortBy, String sortDir) {
+        var sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
+                                                : Sort.by(sortBy).descending();
+
+        var pageable = PageRequest.of(page, size, sort);
+
+        return commentaireRepository.findAll(pageable);
     }
+
 }

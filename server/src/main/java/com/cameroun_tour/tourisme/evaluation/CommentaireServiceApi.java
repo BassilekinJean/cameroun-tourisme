@@ -13,5 +13,5 @@ public interface CommentaireServiceApi {
 
     void supprimerCommentaire(Long id);
 
-    Page<CommentaireDto> listerLesCommentairesLieu(Long lieuId);
+    Page<Commentaire> listerLesCommentairesLieu(Long lieuId, int page, int size, String sortBy, String sortDir);
 }

@@ -1,5 +1,3 @@
-// Créez ce nouveau fichier
-// filepath: server/src/main/java/com/cameroun_tour/tourisme/common/auth/AuthUserDetailsService.java
 package com.cameroun_tour.tourisme.common.auth;
 
 import org.springframework.security.core.userdetails.UserDetailsService;

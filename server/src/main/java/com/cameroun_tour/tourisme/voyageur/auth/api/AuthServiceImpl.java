@@ -151,6 +151,7 @@ public class AuthServiceImpl implements AuthentificationService{
                 redisTemplate.opsForSet().remove(redisKey, refreshToken);
             } catch (Exception e) {
                 // Ignorer si le token était déjà expiré, etc.
+                
             }
         }
     }

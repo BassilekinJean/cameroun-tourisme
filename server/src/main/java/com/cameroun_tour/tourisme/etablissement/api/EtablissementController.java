@@ -35,4 +35,6 @@ public class EtablissementController {
         etablissementService.publierCommentaire(etablissementId, currentUser.getUsername(), dto);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
+
+    
 }
