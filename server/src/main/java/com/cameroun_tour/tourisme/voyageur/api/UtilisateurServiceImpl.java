@@ -1,6 +1,7 @@
 package com.cameroun_tour.tourisme.voyageur.api;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -8,11 +9,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.cameroun_tour.tourisme.voyageur.UserService;
+import com.cameroun_tour.tourisme.voyageur.UtilisateurService;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.errors.UserNotFoundException;
-import com.cameroun_tour.tourisme.voyageur.model.UpdateUserPasswordDto;
-import com.cameroun_tour.tourisme.voyageur.model.UserProfileDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurUpdatePasswordDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurProfileDto;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 @Tag(name = "User Service", description = "Logique Métier de gestion des comptes utilisateurs")
-public class UtilisateurServiceImpl implements UserService {
+public class UtilisateurServiceImpl implements UtilisateurService {
 
     private final UtilisateurRepository userRepository;
 
@@ -37,13 +38,13 @@ public class UtilisateurServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserProfileDto getUserProfile(Long id){
-        Optional<UtilisateurEntity> user = userRepository.findById(id);
+    public UtilisateurProfileDto getUserProfile(UUID id){
+        Optional<UtilisateurEntity> user = userRepository.findByPublicId(id);
         if (user.isEmpty()) {
             throw new UserNotFoundException("Aucun utilisateur trouvé");
         }
         UtilisateurEntity u = user.get();
-        return new UserProfileDto(u.getNomComplet(),
+        return new UtilisateurProfileDto(u.getNomComplet(),
                                   u.getUserEmail(),
                                   u.getPaysOrigine(),
                                   u.getPhotoProfile());
@@ -51,10 +52,9 @@ public class UtilisateurServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void updateUserProfile(UserProfileDto userProfile, String token){
+    public void updateUserProfile(UtilisateurProfileDto userProfile, String email){
 
-        Long id =1L;
-        Optional<UtilisateurEntity> userOpt = userRepository.findById(id);
+        Optional<UtilisateurEntity> userOpt = userRepository.findByUserEmail(email);
 
         if (userOpt.isEmpty()) {
             throw new UserNotFoundException("Aucun utilisateur trouvé");
@@ -90,7 +90,7 @@ public class UtilisateurServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void updatePassword(UpdateUserPasswordDto userPasswordDto, String token) {
+    public void updatePassword(UtilisateurUpdatePasswordDto userPasswordDto, String token) {
 
         String email = "";
 
@@ -102,6 +102,13 @@ public class UtilisateurServiceImpl implements UserService {
         user.get().setUserPassword(userPasswordDto.validatePassword());
         
         userRepository.save(user.get());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UtilisateurEntity findByPublicId(UUID id) {
+        return userRepository.findByPublicId(id)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'id : " + id));
     }
 
     // @Override

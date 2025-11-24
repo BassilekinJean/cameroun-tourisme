@@ -1,4 +1,4 @@
-package com.cameroun_tour.tourisme.evaluation.errors;
+package com.cameroun_tour.tourisme.Avis.errors;
 
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.cameroun_tour.tourisme.common.contracts.CommentaireCreationDto;
+import com.cameroun_tour.tourisme.common.contracts.AvisCreationDto;
 import com.cameroun_tour.tourisme.etablissement.EtablissementServiceApi;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 
@@ -18,22 +18,23 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/etablissements")
+@RequestMapping("/api/lieux")
 @RequiredArgsConstructor
 public class EtablissementController {
 
     private final EtablissementServiceApi etablissementService;
 
-    @PostMapping("/{etablissementId}/commentaires")
-    public ResponseEntity<Void> creerCommentaire(
-            @PathVariable Long etablissementId,
-            @RequestBody @Valid CommentaireCreationDto dto) {
+    @PostMapping("/{publicId}/post-avis")
+    public ResponseEntity<Void> creerAvis(
+            @PathVariable Long publicId,
+            @RequestBody @Valid AvisCreationDto dto) {
         
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UtilisateurEntity currentUser = (UtilisateurEntity) authentication.getPrincipal();
 
-        etablissementService.publierCommentaire(etablissementId, currentUser.getUsername(), dto);
-        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+        etablissementService.publierAvis(publicId, currentUser.getUsername(), dto);
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     

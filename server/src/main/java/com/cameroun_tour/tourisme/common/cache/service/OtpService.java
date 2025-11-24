@@ -4,9 +4,10 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
-import com.cameroun_tour.tourisme.common.cache.api.OtpServiceApi;
+import com.cameroun_tour.tourisme.common.cache.OtpServiceApi;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,20 +27,20 @@ public class OtpService implements OtpServiceApi {
     }
 
     @Override
-    public void saveOtp(String email, String otp) {
+    public void saveOtp(@NonNull String email, @NonNull String otp) {
         redisTemplate.opsForValue().set(email, otp, expirationTime, TimeUnit.MILLISECONDS);
     }
 
-    private String getOtp(String email) {
+    private String getOtp(@NonNull String email) {
         return (String) redisTemplate.opsForValue().get(email);
     }
 
-    private void deleteOtp(String email) {
+    private void deleteOtp(@NonNull String email) {
         redisTemplate.delete(email);
     }
 
     @Override
-    public boolean isOtpValid(String email, String otp) {
+    public boolean isOtpValid(@NonNull String email, @NonNull String otp) {
         String storedOtp = getOtp(email);
         long expiration = redisTemplate.getExpire(email, TimeUnit.MILLISECONDS);
         if (storedOtp == null || expiration <= 0) {

@@ -3,23 +3,23 @@ package com.cameroun_tour.tourisme.voyageur.auth;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
-import com.cameroun_tour.tourisme.voyageur.model.UserLoginDto;
-import com.cameroun_tour.tourisme.voyageur.model.UserProfileDto;
-import com.cameroun_tour.tourisme.voyageur.model.UserRegistrationDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurLoginDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurProfileDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurRegistrationDto;
 
 public interface AuthentificationService {
 
-    public record AuthResult(UserProfileDto user, String accessToken, String refreshToken) {}
+    public record AuthResult(UtilisateurProfileDto user, String accessToken, String refreshToken) {}
 
-    AuthResult register(UserRegistrationDto request);
+    AuthResult register(UtilisateurRegistrationDto request);
 
     AuthResult processOAuth2User(OAuth2User oauth2User);
 
-    AuthResult login(UserLoginDto request);
+    AuthResult login(UtilisateurLoginDto request);
 
     void logout(String accessToken, String refreshToken);
 
     String refreshToken(String refreshToken);
 
-    UserProfileDto convertFromEntity(UtilisateurEntity user);
+    UtilisateurProfileDto convertFromEntity(UtilisateurEntity user);
 }

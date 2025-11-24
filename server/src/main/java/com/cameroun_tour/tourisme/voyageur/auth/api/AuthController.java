@@ -3,9 +3,9 @@ package com.cameroun_tour.tourisme.voyageur.auth.api;
 
 import com.cameroun_tour.tourisme.common.auth.CookieUtil;
 import com.cameroun_tour.tourisme.voyageur.auth.AuthentificationService;
-import com.cameroun_tour.tourisme.voyageur.model.UserLoginDto; 
-import com.cameroun_tour.tourisme.voyageur.model.UserProfileDto;
-import com.cameroun_tour.tourisme.voyageur.model.UserRegistrationDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurLoginDto; 
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurProfileDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurRegistrationDto;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,19 +34,19 @@ public class AuthController {
 
 
     @PostMapping("/register")
-    public ResponseEntity<UserProfileDto> register(
-            @Valid @RequestBody UserRegistrationDto request, 
+    public ResponseEntity<UtilisateurProfileDto> register(
+            @Valid @RequestBody UtilisateurRegistrationDto request, 
             HttpServletResponse response
     ) {
         AuthServiceImpl.AuthResult result = authService.register(request);
         addTokensToCookies(response, result.accessToken(), result.refreshToken());
         
-        return ResponseEntity.ok(new UserProfileDto(request.nomComplet(), request.email(), request.paysOrigine(), request.photoProfile()));
+        return ResponseEntity.ok(new UtilisateurProfileDto(request.nomComplet(), request.email(), request.paysOrigine(), request.photoProfile()));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserProfileDto> login(
-            @Valid @RequestBody UserLoginDto request,
+    public ResponseEntity<UtilisateurProfileDto> login(
+            @Valid @RequestBody UtilisateurLoginDto request,
             HttpServletResponse response
     ) {
         AuthServiceImpl.AuthResult result = authService.login(request);

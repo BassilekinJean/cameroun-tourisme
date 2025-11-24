@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 @PasswordMatches
-public record UserRegistrationDto(
+public record UtilisateurRegistrationDto(
 
     @NotBlank(message = "Le nom est obligatoire")
     String nomComplet,

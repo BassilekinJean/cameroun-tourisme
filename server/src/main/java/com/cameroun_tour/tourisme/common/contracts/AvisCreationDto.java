@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record CommentaireCreationDto(
+public record AvisCreationDto(
     @NotBlank(message = "Le message ne peut pas être vide.")
     @Size(min = 5, max = 500, message = "Le message doit contenir entre 5 et 500 caractères.")
     String message,

@@ -1,4 +1,6 @@
-package com.cameroun_tour.tourisme.common.email.api;
+package com.cameroun_tour.tourisme.common.email;
+
+
 
 public interface EmailServiceApi {
     void sendMessage(String destinataire, String subject, String body);

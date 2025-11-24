@@ -1,8 +1,9 @@
-package com.cameroun_tour.tourisme.evaluation;
+package com.cameroun_tour.tourisme.Avis;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.UUID;
 
-import com.cameroun_tour.tourisme.etablissement.Lieu;
+import com.cameroun_tour.tourisme.etablissement.Etablissement;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 
 import jakarta.persistence.Column;
@@ -15,16 +16,18 @@ import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Entity
 @Data
-public class Commentaire {
+public class Avis {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+
+	@Column(unique=true, nullable = false, updatable = false)
+	private UUID publicId;
 
 	@Column(nullable = false)
 	@NotBlank(message = "Veuillez saisir un message")
@@ -32,16 +35,13 @@ public class Commentaire {
 
 	@Min(1) @Max(5) private int note;
 
-	@NotNull
 	@ManyToOne
-	@JoinColumn(name = "utilisateur_entity_id", nullable = false)
-	private UtilisateurEntity auteur;
+    @JoinColumn(name = "utilisateur_id", nullable = false)
+    private UtilisateurEntity auteur;
 
-	@NotNull
-	@ManyToOne
-	@JoinColumn(name = "lieu_id")
-	private Lieu lieuConcerne;
+    @ManyToOne
+    @JoinColumn(name = "etablissement_id", nullable = false)
+    private Etablissement lieuConcerne;
 
-	private LocalDateTime dateCreation;
-
+	private LocalDate dateCreation;
 }

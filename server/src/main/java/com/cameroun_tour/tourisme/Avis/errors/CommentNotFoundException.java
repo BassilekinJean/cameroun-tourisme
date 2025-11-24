@@ -1,4 +1,4 @@
-package com.cameroun_tour.tourisme.evaluation.errors;
+package com.cameroun_tour.tourisme.Avis.errors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

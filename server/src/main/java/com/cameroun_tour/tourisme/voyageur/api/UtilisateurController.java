@@ -1,18 +1,21 @@
 package com.cameroun_tour.tourisme.voyageur.api;
 
+import java.util.UUID;
+
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.cameroun_tour.tourisme.voyageur.UserService;
+import com.cameroun_tour.tourisme.voyageur.UtilisateurService;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
-import com.cameroun_tour.tourisme.voyageur.model.UserProfileDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurProfileDto;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,46 +33,43 @@ import org.springframework.web.bind.annotation.PutMapping;
 @RequestMapping("/api/user")
 public class UtilisateurController {
 
-    private final UserService userService;
+    private final UtilisateurService userService;
+    private final VoyageurAssembler voyageurAssembler;
 
     @GetMapping(path = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<UserProfileDto> getMyProfile(Authentication authentication) {
+    public ResponseEntity<VoyageurResponse> getMyProfile(Authentication authentication) {
         String userEmail = authentication.getName(); 
         UtilisateurEntity user = this.userService.findByEmail(userEmail); 
         
-        UserProfileDto profile = new UserProfileDto(
-            user.getNomComplet(), 
-            user.getUserEmail(), 
-            user.getPaysOrigine(), 
-            user.getPhotoProfile()
-        );
-        return ResponseEntity.ok(profile);
+        return ResponseEntity.ok(voyageurAssembler.toModel(user));
     }
 
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<UserProfileDto> getProfileWithId(@PathVariable Long id) {
-        UserProfileDto searchedUser = this.userService.getUserProfile(id);
-        return ResponseEntity.status(HttpStatus.FOUND).body(searchedUser);
+    public ResponseEntity<VoyageurResponse> getProfileWithId(@PathVariable UUID id) {
+        UtilisateurEntity searchedUser = this.userService.findByPublicId(id);
+        return ResponseEntity.status(HttpStatus.FOUND).body(voyageurAssembler.toModel(searchedUser));
     }  
     
     @GetMapping(path = "/all", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Page<UtilisateurEntity>> listerTousLesUsers(@RequestParam int page, 
+    public ResponseEntity<PagedModel<VoyageurResponse>> listerTousLesUsers(@RequestParam int page, 
                                                                     @RequestParam int size, 
                                                                     @RequestParam String sort, 
-                                                                    @RequestParam String sortDir) {
+                                                                    @RequestParam String sortDir,
+                                                                    PagedResourcesAssembler<UtilisateurEntity> pagedAssembler) {
 
-        return ResponseEntity.ok(userService.getAllUser(page, size, sort, sortDir)) ;
+        Page<UtilisateurEntity> users = userService.getAllUser(page, size, sort, sortDir);
+        return ResponseEntity.ok(pagedAssembler.toModel(users, voyageurAssembler));
     }
 
-    //à faire
     @PutMapping("/update")
-    public ResponseEntity<UserProfileDto> updateProfilInfo(@Valid @RequestBody UserProfileDto entity, HttpServletRequest request) {
+    public ResponseEntity<VoyageurResponse> updateProfilInfo(@Valid @RequestBody UtilisateurProfileDto entity, Authentication authentication) {
         
-        String authHeader = request.getHeader("Authorization");
-
-        userService.updateUserProfile(entity, authHeader);
-        return ResponseEntity.ok(entity);
+        String email = authentication.getName();
+        userService.updateUserProfile(entity, email);
+        
+        UtilisateurEntity updatedUser = userService.findByEmail(entity.email());
+        
+        return ResponseEntity.ok(voyageurAssembler.toModel(updatedUser));
     }
-    
 }

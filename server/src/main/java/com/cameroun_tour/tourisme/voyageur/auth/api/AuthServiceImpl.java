@@ -17,9 +17,9 @@ import com.cameroun_tour.tourisme.common.utils.enums.Role;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.api.UtilisateurRepository;
 import com.cameroun_tour.tourisme.voyageur.auth.AuthentificationService;
-import com.cameroun_tour.tourisme.voyageur.model.UserLoginDto; 
-import com.cameroun_tour.tourisme.voyageur.model.UserProfileDto;
-import com.cameroun_tour.tourisme.voyageur.model.UserRegistrationDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurLoginDto; 
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurProfileDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurRegistrationDto;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -49,7 +49,7 @@ public class AuthServiceImpl implements AuthentificationService{
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public AuthResult register(UserRegistrationDto request) {
+    public AuthResult register(UtilisateurRegistrationDto request) {
         try{
             var user = UtilisateurEntity.builder()
                 .nomComplet(request.nomComplet())
@@ -64,7 +64,7 @@ public class AuthServiceImpl implements AuthentificationService{
         }catch (DataIntegrityViolationException e){
             throw new EmailAlreadyExistsException("Un utilisateur avec cet email existe déjà.");
         }
-        UserProfileDto userProfileDto = new UserProfileDto(request.nomComplet(),
+        UtilisateurProfileDto userProfileDto = new UtilisateurProfileDto(request.nomComplet(),
                                                            request.email(),
                                                            request.paysOrigine(),
                                                            request.photoProfile());
@@ -73,14 +73,14 @@ public class AuthServiceImpl implements AuthentificationService{
 
     @Override
     @Transactional(readOnly = true)
-    public AuthResult login(UserLoginDto request) { 
+    public AuthResult login(UtilisateurLoginDto request) { 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
         var user = userRepository.findByUserEmail(request.email())
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé"));
 
-        UserProfileDto userProfileDto = new UserProfileDto(user.getNomComplet(),
+        UtilisateurProfileDto userProfileDto = new UtilisateurProfileDto(user.getNomComplet(),
                                                             user.getUserEmail(),
                                                             user.getPaysOrigine(),
                                                             user.getPhotoProfile());
@@ -104,7 +104,7 @@ public class AuthServiceImpl implements AuthentificationService{
                             .build();
                     return userRepository.save(newUser);
                 }); 
-        UserProfileDto userProfileDto = new UserProfileDto(user.getNomComplet(),
+        UtilisateurProfileDto userProfileDto = new UtilisateurProfileDto(user.getNomComplet(),
                                                             user.getUserEmail(),
                                                             user.getPaysOrigine(),
                                                             user.getPhotoProfile());
@@ -159,7 +159,7 @@ public class AuthServiceImpl implements AuthentificationService{
     /**
      * Helper pour générer les tokens et les stocker dans la whitelist Redis
      */
-    private AuthResult generateAndStoreTokens(UserProfileDto user) {
+    private AuthResult generateAndStoreTokens(UtilisateurProfileDto user) {
         String accessToken = jwtService.generateToken(user.email());
         String refreshToken = jwtService.generateRefreshToken(user.email());
 
@@ -173,8 +173,8 @@ public class AuthServiceImpl implements AuthentificationService{
     }
 
     @Override
-    public UserProfileDto convertFromEntity(UtilisateurEntity user){
-        var userProfile = new UserProfileDto(user.getNomComplet(), user.getUserEmail(), user.getPaysOrigine(), user.getPhotoProfile());
+    public UtilisateurProfileDto convertFromEntity(UtilisateurEntity user){
+        var userProfile = new UtilisateurProfileDto(user.getNomComplet(), user.getUserEmail(), user.getPaysOrigine(), user.getPhotoProfile());
         return userProfile;
     }
 }

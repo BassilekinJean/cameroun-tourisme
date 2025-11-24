@@ -6,7 +6,7 @@ import com.cameroun_tour.tourisme.common.utils.validators.ValidPassword;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record UpdateUserPasswordDto(
+public record UtilisateurUpdatePasswordDto(
 
 
     @NotBlank(message = "Le mot de passe est obligatoire !!!")

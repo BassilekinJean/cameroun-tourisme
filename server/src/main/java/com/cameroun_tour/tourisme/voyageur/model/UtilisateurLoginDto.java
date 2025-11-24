@@ -4,7 +4,7 @@ package com.cameroun_tour.tourisme.voyageur.model;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-public record UserLoginDto(
+public record UtilisateurLoginDto(
 
     @NotBlank(message = "L'email est obligatoire !!!")
     @Email(message = "Format d'email invalide !!!")
