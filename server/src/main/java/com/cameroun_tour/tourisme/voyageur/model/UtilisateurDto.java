@@ -1,14 +1,16 @@
 package com.cameroun_tour.tourisme.voyageur.model;
 
 
+import java.util.UUID;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 
 @Builder
-public record UtilisateurProfileDto(
+public record UtilisateurDto(
 
-    //String id,
+    UUID publicId,
 
     @NotBlank(message = "Le nom est obligatoire")
     String nomComplet,

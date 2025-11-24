@@ -13,7 +13,7 @@ import com.cameroun_tour.tourisme.voyageur.UtilisateurService;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.errors.UserNotFoundException;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurUpdatePasswordDto;
-import com.cameroun_tour.tourisme.voyageur.model.UtilisateurProfileDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -38,13 +38,14 @@ public class UtilisateurServiceImpl implements UtilisateurService {
 
     @Override
     @Transactional(readOnly = true)
-    public UtilisateurProfileDto getUserProfile(UUID id){
+    public UtilisateurDto getUserProfile(UUID id){
         Optional<UtilisateurEntity> user = userRepository.findByPublicId(id);
         if (user.isEmpty()) {
             throw new UserNotFoundException("Aucun utilisateur trouvé");
         }
         UtilisateurEntity u = user.get();
-        return new UtilisateurProfileDto(u.getNomComplet(),
+        return new UtilisateurDto(u.getPublicId(), 
+                                  u.getNomComplet(),
                                   u.getUserEmail(),
                                   u.getPaysOrigine(),
                                   u.getPhotoProfile());
@@ -52,7 +53,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
 
     @Override
     @Transactional
-    public void updateUserProfile(UtilisateurProfileDto userProfile, String email){
+    public void updateUserProfile(UtilisateurDto userProfile, String email){
 
         Optional<UtilisateurEntity> userOpt = userRepository.findByUserEmail(email);
 

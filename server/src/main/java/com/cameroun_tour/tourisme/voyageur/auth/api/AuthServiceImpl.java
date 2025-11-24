@@ -18,7 +18,7 @@ import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.api.UtilisateurRepository;
 import com.cameroun_tour.tourisme.voyageur.auth.AuthentificationService;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurLoginDto; 
-import com.cameroun_tour.tourisme.voyageur.model.UtilisateurProfileDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurRegistrationDto;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,7 +36,7 @@ public class AuthServiceImpl implements AuthentificationService{
     private final UtilisateurRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JWTutils jwtService;
-    private final  @Lazy AuthenticationManager authenticationManager;
+    private final @Lazy AuthenticationManager authenticationManager;
     
     private final RedisTemplate<String, Object> redisTemplate;
 
@@ -50,7 +50,8 @@ public class AuthServiceImpl implements AuthentificationService{
     @Override
     @Transactional(rollbackFor = Exception.class)
     public AuthResult register(UtilisateurRegistrationDto request) {
-        try{
+        UtilisateurEntity savedUser; // On déclare une variable pour récupérer l'entité sauvegardée
+        try {
             var user = UtilisateurEntity.builder()
                 .nomComplet(request.nomComplet())
                 .userEmail(request.email())
@@ -58,17 +59,14 @@ public class AuthServiceImpl implements AuthentificationService{
                 .paysOrigine(request.paysOrigine())
                 .photoProfile(request.photoProfile())
                 .role(Role.USER)
-                .build();
+                .build(); // publicId est généré automatiquement ici par le @Builder.Default de l'entité
 
-            userRepository.save(user);
-        }catch (DataIntegrityViolationException e){
+            savedUser = userRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
             throw new EmailAlreadyExistsException("Un utilisateur avec cet email existe déjà.");
         }
-        UtilisateurProfileDto userProfileDto = new UtilisateurProfileDto(request.nomComplet(),
-                                                           request.email(),
-                                                           request.paysOrigine(),
-                                                           request.photoProfile());
-        return generateAndStoreTokens(userProfileDto);
+
+        return generateAndStoreTokens(convertFromEntity(savedUser));
     }
 
     @Override
@@ -80,12 +78,7 @@ public class AuthServiceImpl implements AuthentificationService{
         var user = userRepository.findByUserEmail(request.email())
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé"));
 
-        UtilisateurProfileDto userProfileDto = new UtilisateurProfileDto(user.getNomComplet(),
-                                                            user.getUserEmail(),
-                                                            user.getPaysOrigine(),
-                                                            user.getPhotoProfile());
-
-        return generateAndStoreTokens(userProfileDto);
+        return generateAndStoreTokens(convertFromEntity(user));
     }
 
     @Override
@@ -94,22 +87,16 @@ public class AuthServiceImpl implements AuthentificationService{
         String email = oauth2User.getAttribute("email");
         UtilisateurEntity user = userRepository.findByUserEmail(email)
                 .orElseGet(() -> {
-                    // Inscription automatique pour Google
                     UtilisateurEntity newUser = UtilisateurEntity.builder()
                             .userEmail(email)
                             .nomComplet(oauth2User.getAttribute("name"))
                             .photoProfile(oauth2User.getAttribute("picture"))
                             .role(Role.USER)
-                            // Pas de mot de passe local pour un utilisateur OAuth2
                             .build();
                     return userRepository.save(newUser);
                 }); 
-        UtilisateurProfileDto userProfileDto = new UtilisateurProfileDto(user.getNomComplet(),
-                                                            user.getUserEmail(),
-                                                            user.getPaysOrigine(),
-                                                            user.getPhotoProfile());
-
-        return generateAndStoreTokens(userProfileDto);
+        
+        return generateAndStoreTokens(convertFromEntity(user));
     }
 
     @Override
@@ -159,7 +146,7 @@ public class AuthServiceImpl implements AuthentificationService{
     /**
      * Helper pour générer les tokens et les stocker dans la whitelist Redis
      */
-    private AuthResult generateAndStoreTokens(UtilisateurProfileDto user) {
+    private AuthResult generateAndStoreTokens(UtilisateurDto user) {
         String accessToken = jwtService.generateToken(user.email());
         String refreshToken = jwtService.generateRefreshToken(user.email());
 
@@ -173,8 +160,14 @@ public class AuthServiceImpl implements AuthentificationService{
     }
 
     @Override
-    public UtilisateurProfileDto convertFromEntity(UtilisateurEntity user){
-        var userProfile = new UtilisateurProfileDto(user.getNomComplet(), user.getUserEmail(), user.getPaysOrigine(), user.getPhotoProfile());
+    public UtilisateurDto convertFromEntity(UtilisateurEntity user){
+        var userProfile = UtilisateurDto.builder()
+                                        .publicId(user.getPublicId())
+                                        .nomComplet(user.getNomComplet())
+                                        .email(user.getUserEmail())
+                                        .paysOrigine(user.getPaysOrigine())
+                                        .photoProfile(user.getPhotoProfile())
+                                        .build();
         return userProfile;
     }
 }

@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.cameroun_tour.tourisme.voyageur.UtilisateurService;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
-import com.cameroun_tour.tourisme.voyageur.model.UtilisateurProfileDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -63,7 +63,7 @@ public class UtilisateurController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<VoyageurResponse> updateProfilInfo(@Valid @RequestBody UtilisateurProfileDto entity, Authentication authentication) {
+    public ResponseEntity<VoyageurResponse> updateProfilInfo(@Valid @RequestBody UtilisateurDto entity, Authentication authentication) {
         
         String email = authentication.getName();
         userService.updateUserProfile(entity, email);

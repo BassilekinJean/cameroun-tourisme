@@ -5,16 +5,16 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurUpdatePasswordDto;
-import com.cameroun_tour.tourisme.voyageur.model.UtilisateurProfileDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
 
 
 public interface UtilisateurService {
 
     void deleteAccountWithId(Long id);
 
-    UtilisateurProfileDto getUserProfile(UUID id);
+    UtilisateurDto getUserProfile(UUID id);
 
-    void updateUserProfile(UtilisateurProfileDto userProfile, String email);
+    void updateUserProfile(UtilisateurDto userProfile, String email);
 
     void updatePassword(UtilisateurUpdatePasswordDto userPasswordDto, String token);
 

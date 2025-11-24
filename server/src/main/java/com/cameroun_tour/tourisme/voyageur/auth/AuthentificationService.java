@@ -4,12 +4,12 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurLoginDto;
-import com.cameroun_tour.tourisme.voyageur.model.UtilisateurProfileDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurRegistrationDto;
 
 public interface AuthentificationService {
 
-    public record AuthResult(UtilisateurProfileDto user, String accessToken, String refreshToken) {}
+    public record AuthResult(UtilisateurDto user, String accessToken, String refreshToken) {}
 
     AuthResult register(UtilisateurRegistrationDto request);
 
@@ -21,5 +21,5 @@ public interface AuthentificationService {
 
     String refreshToken(String refreshToken);
 
-    UtilisateurProfileDto convertFromEntity(UtilisateurEntity user);
+    UtilisateurDto convertFromEntity(UtilisateurEntity user);
 }
