@@ -1,0 +1,43 @@
+package com.cameroun_tour.tourisme.Avis.api;
+
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+import org.springframework.hateoas.server.mvc.RepresentationModelAssemblerSupport;
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Component;
+
+import com.cameroun_tour.tourisme.Avis.Avis;
+import com.cameroun_tour.tourisme.Avis.model.AvisDto;
+
+@Component
+public class AvisModelAssembler extends RepresentationModelAssemblerSupport<Avis, AvisDto> {
+
+    public AvisModelAssembler() {
+        super(AvisController.class, AvisDto.class);
+    }
+
+    @NonNull
+    @Override
+    @SuppressWarnings("null")
+    public AvisDto toModel(@NonNull Avis entity) {
+        AvisDto dto = AvisDto.builder()
+                .publicId(entity.getPublicId())
+                .message(entity.getMessage())
+                .note(entity.getNote())
+                .dateCreation(entity.getDateCreation())
+                .build();
+
+        // 1. Lien vers soi-même (Self)
+        // Supposons que tu aies une méthode getOneAvis dans AvisController
+        // dto.add(linkTo(methodOn(AvisController.class).getOneAvis(entity.getPublicId())).withSelfRel());
+
+        // 2. Liens d'action (Update / Delete)
+        // On ajoute ces liens car on est dans le contexte "Mes Avis"
+        dto.add(linkTo(methodOn(AvisController.class).modifierUnAvis(dto)).withSelfRel());
+        dto.add(linkTo(methodOn(AvisController.class).supprimerMonAvis(entity.getPublicId())).withRel("delete"));
+
+        return dto;
+    }
+}

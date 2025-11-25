@@ -9,11 +9,15 @@ import com.cameroun_tour.tourisme.common.events.AvisPublieEvent;
 
 public interface AvisServiceApi {
 
+    Avis getOneAvis(UUID id);
+
     void onAvisPublier(AvisPublieEvent event);
 
-    void editAvis(AvisDto comment);
+    void editAvis(UUID auteurId ,AvisDto comment);
 
     void supprimerAvis(Long id);
+
+    void supprimerUserAvis(UUID userId, UUID avisId);
 
     Page<Avis> listerLesAvisLieu(Long lieuId, int page, int size, String sortBy, String sortDir);
 

@@ -48,6 +48,7 @@ public class AuthServiceImpl implements AuthentificationService{
     }
     
     @Override
+    @SuppressWarnings("null")
     @Transactional(rollbackFor = Exception.class)
     public AuthResult register(UtilisateurRegistrationDto request) {
         UtilisateurEntity savedUser; // On déclare une variable pour récupérer l'entité sauvegardée
@@ -66,6 +67,7 @@ public class AuthServiceImpl implements AuthentificationService{
             throw new EmailAlreadyExistsException("Un utilisateur avec cet email existe déjà.");
         }
 
+        // CORRECTION : On utilise la méthode de conversion qui inclut le publicId
         return generateAndStoreTokens(convertFromEntity(savedUser));
     }
 
@@ -82,15 +84,23 @@ public class AuthServiceImpl implements AuthentificationService{
     }
 
     @Override
+    @SuppressWarnings("null")
     @Transactional(rollbackFor = Exception.class)
     public AuthResult processOAuth2User(OAuth2User oauth2User) {
         String email = oauth2User.getAttribute("email");
+        if (email == null) {
+            throw new IllegalArgumentException("Email introuvable dans le compte OAuth2");
+        }
+        
         UtilisateurEntity user = userRepository.findByUserEmail(email)
                 .orElseGet(() -> {
+                    String name = oauth2User.getAttribute("name");
+                    String picture = oauth2User.getAttribute("picture");
+                    
                     UtilisateurEntity newUser = UtilisateurEntity.builder()
                             .userEmail(email)
-                            .nomComplet(oauth2User.getAttribute("name"))
-                            .photoProfile(oauth2User.getAttribute("picture"))
+                            .nomComplet(name != null ? name : "Utilisateur sans nom")
+                            .photoProfile(picture)
                             .role(Role.USER)
                             .build();
                     return userRepository.save(newUser);
@@ -100,6 +110,7 @@ public class AuthServiceImpl implements AuthentificationService{
     }
 
     @Override
+    @SuppressWarnings("null")
     public String refreshToken(String refreshToken) {
         if (refreshToken == null || jwtService.isTokenInvalidated(refreshToken)) {
             throw new RuntimeException("Refresh token invalide ou blacklisté (1)");
@@ -122,6 +133,7 @@ public class AuthServiceImpl implements AuthentificationService{
     }
     
     @Override
+    @SuppressWarnings("null")
     public void logout(String accessToken, String refreshToken) {
         if (accessToken != null) {
             // 1. Mettre l'access token sur la blacklist
@@ -146,6 +158,7 @@ public class AuthServiceImpl implements AuthentificationService{
     /**
      * Helper pour générer les tokens et les stocker dans la whitelist Redis
      */
+    @SuppressWarnings("null")
     private AuthResult generateAndStoreTokens(UtilisateurDto user) {
         String accessToken = jwtService.generateToken(user.email());
         String refreshToken = jwtService.generateRefreshToken(user.email());

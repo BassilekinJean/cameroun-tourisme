@@ -27,9 +27,15 @@ public class EmailServiceImpl implements EmailServiceApi {
         try {
             MimeMessage message = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message,true);
-            helper.setTo(destinataire);
-            helper.setSubject(subject);
-            helper.setText(body, true);
+            if (destinataire != null) {
+                helper.setTo(destinataire);
+            }
+            if (subject != null) {
+                helper.setSubject(subject);
+            }
+            if(body != null){
+                helper.setText(body, true);
+            } 
             javaMailSender.send(message);
         } catch (MessagingException e) {
             e.printStackTrace();
@@ -60,6 +66,8 @@ public class EmailServiceImpl implements EmailServiceApi {
 
         sendMessage(email, subject, emailContent);
 
-        otpService.saveOtp(email, otpCode);
+        if (otpCode != null && email != null) {
+            otpService.saveOtp(email, otpCode);
+        }
     }
 }

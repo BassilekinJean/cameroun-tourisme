@@ -41,6 +41,9 @@ public class UtilisateurController {
         String userEmail = authentication.getName(); 
         UtilisateurEntity user = this.userService.findByEmail(userEmail); 
         
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.ok(voyageurAssembler.toModel(user));
     }
 
@@ -48,9 +51,13 @@ public class UtilisateurController {
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<VoyageurResponse> getProfileWithId(@PathVariable UUID id) {
         UtilisateurEntity searchedUser = this.userService.findByPublicId(id);
+        if (searchedUser == null) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.status(HttpStatus.FOUND).body(voyageurAssembler.toModel(searchedUser));
     }  
     
+    @SuppressWarnings("null")
     @GetMapping(path = "/all", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PagedModel<VoyageurResponse>> listerTousLesUsers(@RequestParam int page, 
                                                                     @RequestParam int size, 
@@ -59,6 +66,9 @@ public class UtilisateurController {
                                                                     PagedResourcesAssembler<UtilisateurEntity> pagedAssembler) {
 
         Page<UtilisateurEntity> users = userService.getAllUser(page, size, sort, sortDir);
+        if (users == null) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.ok(pagedAssembler.toModel(users, voyageurAssembler));
     }
 
@@ -70,6 +80,10 @@ public class UtilisateurController {
         
         UtilisateurEntity updatedUser = userService.findByEmail(entity.email());
         
+        if (updatedUser == null) {
+            return ResponseEntity.notFound().build();
+        }
+
         return ResponseEntity.ok(voyageurAssembler.toModel(updatedUser));
     }
 }

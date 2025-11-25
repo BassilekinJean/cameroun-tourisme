@@ -75,7 +75,7 @@ public class SecurityConfig {
                     oauth2.successHandler(handler);
                 }}
             );
-
+        
         return http.build();
     }
     

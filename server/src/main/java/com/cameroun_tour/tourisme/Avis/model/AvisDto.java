@@ -1,25 +1,36 @@
 package com.cameroun_tour.tourisme.Avis.model;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
+import org.springframework.hateoas.RepresentationModel;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
-public record AvisDto(
-
-    UUID publicId,
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = false) 
+public class AvisDto extends RepresentationModel<AvisDto>{
+    private UUID publicId;
 
     @NotBlank(message = "Veuillez saisir un message")
-    String message,
+    private String message;
 
-    String auteurPhoto,
+    String auteurPhoto;
     
     @NotBlank
-    String auteurName,
+    String auteurName;
 
-    @Min(1) @Max(5) int note
-) {
+    LocalDate dateCreation;
 
+    private @Min(1) @Max(5) int note;
 }

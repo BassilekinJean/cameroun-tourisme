@@ -16,7 +16,7 @@ public interface UtilisateurService {
 
     void updateUserProfile(UtilisateurDto userProfile, String email);
 
-    void updatePassword(UtilisateurUpdatePasswordDto userPasswordDto, String token);
+    void updatePassword(UtilisateurUpdatePasswordDto userPasswordDto, String email);
 
     UtilisateurEntity findByPublicId(UUID id);
 

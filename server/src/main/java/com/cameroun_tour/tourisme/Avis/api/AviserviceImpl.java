@@ -1,6 +1,5 @@
 package com.cameroun_tour.tourisme.Avis.api;
 
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import org.springframework.context.event.EventListener;
@@ -49,24 +48,21 @@ public class AviserviceImpl implements AvisServiceApi {
         avisRepository.save(avis);
     }
 
-    public void editAvis(AvisDto comment) {
-        var avis = avisRepository.findByPublicId(comment.publicId());
+    @SuppressWarnings("null")
+    public void editAvis(UUID auteurUuid ,AvisDto avisDto) {
+        var avis = avisRepository.findByPublicId(avisDto.getPublicId())
+                .orElseThrow(() -> new CommentNotFoundException("avis Introuvable ou inexistant"));
 
-        if (avis.isEmpty()) {
-            throw new CommentNotFoundException("avis Introuvable ou inexistant");
+        if (!avis.getAuteur().getPublicId().equals(auteurUuid)) {
+            throw new CommentNotFoundException("Vous ne pouvez pas modifier un avis qui n'est pas le votre");
         }
-
-        avis.get().setMessage(comment.message());
-        avis.get().setNote(comment.note());
-
-        try {
-            var saveAvis =avis.get();
-            avisRepository.save(saveAvis);
-        } catch (NoSuchElementException e) {
-            throw new CommentNotFoundException("avis Introuvable ou inexistant");
-        }
+        avis.setMessage(avisDto.getMessage());
+        avis.setNote(avisDto.getNote());
+        
+        avisRepository.save(avis);
     }
 
+    @SuppressWarnings("null")
     public void supprimerAvis(Long id) {
         var avis = avisRepository.findById(id);
         if (avis.isEmpty()) {
@@ -92,13 +88,33 @@ public class AviserviceImpl implements AvisServiceApi {
                 var pageable = PageRequest.of(page, size, sort);
 
                 return avisRepository.findByAuteur_PublicId(userPublicId, pageable)
-                        .map(comment -> new AvisDto(
-                            comment.getPublicId(),
-                            comment.getMessage(),
-                            comment.getAuteur().getPhotoProfile(),
-                            comment.getAuteur().getNomComplet(),
-                            comment.getNote()
+                        .map(avis -> new AvisDto(
+                            avis.getPublicId(),
+                            avis.getMessage(),
+                            avis.getAuteur().getPhotoProfile(),
+                            avis.getAuteur().getNomComplet(),
+                            avis.getDateCreation(),
+                            avis.getNote()
                         ));
     }
 
+    @Override
+    @SuppressWarnings("null")
+    public void supprimerUserAvis(UUID userId, UUID avisId) {
+        var avis = avisRepository.findByPublicId(avisId)
+                .filter(a -> a.getAuteur().getPublicId().equals(userId))
+                .orElseThrow(() -> new CommentNotFoundException("Avis introuvable ou vous n'êtes pas l'auteur de cet avis"));
+
+        avisRepository.delete(avis);
+    }
+
+    @Override
+    public Avis getOneAvis(UUID id) {
+        var avis = avisRepository.findByPublicId(id);
+        if (avis.isEmpty()) {
+            throw new CommentNotFoundException("Avis introuvable");
+        }
+        var a = avis.get();
+        return a;
+    }
 }

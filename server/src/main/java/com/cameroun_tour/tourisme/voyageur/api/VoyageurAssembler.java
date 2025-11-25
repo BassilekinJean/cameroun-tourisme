@@ -17,6 +17,7 @@ public class VoyageurAssembler extends RepresentationModelAssemblerSupport<Utili
     
     @Override
     @NonNull
+    @SuppressWarnings("null")
     public VoyageurResponse toModel(@NonNull UtilisateurEntity entity) {
         VoyageurResponse model = instantiateModel(entity);
         

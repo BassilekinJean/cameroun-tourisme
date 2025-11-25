@@ -1,5 +1,7 @@
 package com.cameroun_tour.tourisme.voyageur.api;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,11 +31,11 @@ public class UtilisateurServiceImpl implements UtilisateurService {
     @Override
     @Transactional
     public void deleteAccountWithId(Long id) {
-        UtilisateurEntity userToDelete = this.userRepository.findById(id)
+        UtilisateurEntity userToDelete = this.userRepository.findById(requireNonNull(id))
                                                     .orElseThrow(() -> 
                                                     new UserNotFoundException("Aucun utilisateur trouver"));
 
-        userRepository.deleteById(userToDelete.getId());
+        userRepository.deleteById(requireNonNull(userToDelete.getId()));
     }
 
     @Override
@@ -95,14 +97,12 @@ public class UtilisateurServiceImpl implements UtilisateurService {
 
         String email = "";
 
-        Optional<UtilisateurEntity> user = userRepository.findByUserEmail(email);
+        UtilisateurEntity user = userRepository.findByUserEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("L'utilisateur avec l'email " + email + " est introuvable"));
 
-        if (user == null) {
-            throw new UserNotFoundException("L'utilisateur avec l'email " + email + " est introuvable");
-        }
-        user.get().setUserPassword(userPasswordDto.validatePassword());
+        user.setUserPassword(userPasswordDto.validatePassword());
         
-        userRepository.save(user.get());
+        userRepository.save(user);
     }
 
     @Override
@@ -111,21 +111,5 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         return userRepository.findByPublicId(id)
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'id : " + id));
     }
-
-    // @Override
-    // public void publierCommentaire(String email, CommentaireCreationDto comment) {
-    //     // 1. Valider que l'utilisateur existe (optionnel, peut être fait par Spring Security)
-    //     userRepository.findByUserEmail(email)
-    //         .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé"));
-
-    //     // 2. Publier l'événement pour que le module 'evaluation' le traite
-    //     CommentairePublieEvent event = new CommentairePublieEvent(
-    //         email,
-    //         comment.message(),
-    //         comment.note(),
-    //         LocalDateTime.now()
-    //     );
-    //     events.publishEvent(event);
-    // }
 
 }

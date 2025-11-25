@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-@PasswordMatches
+@PasswordMatches(message = "Le mot de passe et la validation du mot de passe ne correspondent pas")
 public record UtilisateurRegistrationDto(
 
     @NotBlank(message = "Le nom est obligatoire")

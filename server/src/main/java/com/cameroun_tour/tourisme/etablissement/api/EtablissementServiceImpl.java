@@ -31,6 +31,7 @@ public class EtablissementServiceImpl implements EtablissementServiceApi {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public void publierAvis(Long lieuId, String auteurEmail, AvisCreationDto dto) {
         etablissementRepository.findById(lieuId)
             .orElseThrow(() -> new EntityNotFoundException("Établissement non trouvé avec l'ID : " + lieuId));
@@ -46,6 +47,7 @@ public class EtablissementServiceImpl implements EtablissementServiceApi {
     }
 
     @Override
+    @SuppressWarnings("null")
     public Etablissement trouverAvecId(Long id) {
         Optional<Etablissement> lieu = etablissementRepository.findById(id);
 
