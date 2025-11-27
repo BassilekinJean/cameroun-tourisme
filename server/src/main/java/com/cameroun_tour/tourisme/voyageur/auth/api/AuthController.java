@@ -7,6 +7,8 @@ import com.cameroun_tour.tourisme.voyageur.model.UtilisateurLoginDto;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurRegistrationDto;
 
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,6 +24,7 @@ import java.util.Arrays;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Authentification", description = "Endpoints pour l'authentification")
 public class AuthController {
 
     private final AuthentificationService authService;
@@ -34,6 +37,7 @@ public class AuthController {
 
 
     @PostMapping("/register")
+    @RateLimiter(name = "registerRateLimiter")
     public ResponseEntity<UtilisateurDto> register(
             @Valid @RequestBody UtilisateurRegistrationDto request, 
             HttpServletResponse response
@@ -45,6 +49,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @RateLimiter(name = "loginRateLimiter")
     public ResponseEntity<UtilisateurDto> login(
             @Valid @RequestBody UtilisateurLoginDto request,
             HttpServletResponse response
@@ -56,6 +61,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
+    @RateLimiter(name = "refreshRateLimiter")
     public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = extractTokenFromCookie(request, refreshTokenCookieName);
         if (refreshToken == null) {

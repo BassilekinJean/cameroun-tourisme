@@ -5,6 +5,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
+import com.cameroun_tour.tourisme.voyageur.model.VoyageurResponse;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 

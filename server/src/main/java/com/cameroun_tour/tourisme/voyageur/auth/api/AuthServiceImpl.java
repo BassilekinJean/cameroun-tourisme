@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -23,10 +25,14 @@ import com.cameroun_tour.tourisme.voyageur.model.UtilisateurRegistrationDto;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import com.cameroun_tour.tourisme.voyageur.errors.AccountLockedException;
 import com.cameroun_tour.tourisme.voyageur.errors.EmailAlreadyExistsException;
-import com.cameroun_tour.tourisme.voyageur.errors.UserNotFoundException; 
+import com.cameroun_tour.tourisme.voyageur.errors.UserNotFoundException;
+import com.cameroun_tour.tourisme.voyageur.errors.VoyageurBadCredentialsException;
 
+import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
+
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +45,9 @@ public class AuthServiceImpl implements AuthentificationService{
     private final @Lazy AuthenticationManager authenticationManager;
     
     private final RedisTemplate<String, Object> redisTemplate;
+
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final long LOCK_TIME_DURATION_HOURS = 2;
 
     @Value("${jwt.refresh-token-expiration}")
     private long refreshTokenExpirationMs;
@@ -74,13 +83,39 @@ public class AuthServiceImpl implements AuthentificationService{
     @Override
     @Transactional(readOnly = true)
     public AuthResult login(UtilisateurLoginDto request) { 
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password())
-        );
-        var user = userRepository.findByUserEmail(request.email())
+         // 1. Récupérer l'utilisateur (sans le mot de passe pour l'instant)
+        UtilisateurEntity user = userRepository.findByUserEmail(request.email())
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé"));
 
-        return generateAndStoreTokens(convertFromEntity(user));
+        // 2. Vérifier si le compte est verrouillé
+        if (user.isAccountLocked()) {
+            if (unlockWhenTimeExpired(user)) {
+                // Le temps est écoulé, on a déverrouillé, on continue
+            } else {
+                throw new AccountLockedException("Votre compte est verrouillé. Réessayez dans 2 heures.");
+            }
+        }
+
+        try {
+            // 3. Tenter l'authentification
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.email(), request.password())
+            );
+            
+            // 4. SUCCÈS : Réinitialiser les compteurs
+            if (user.getFailedAttempt() > 0) {
+                resetFailedAttempts(user);
+            }
+            return generateAndStoreTokens(convertFromEntity(user));
+
+        } catch (BadCredentialsException e) {
+            // 5. ÉCHEC : Incrémenter les tentatives
+            increaseFailedAttempts(user);
+            throw new VoyageurBadCredentialsException("Email ou mot de passe incorrect");
+        } catch (LockedException e) {
+             // Au cas où l'AuthenticationManager lance lui-même une LockedException
+             throw new AccountLockedException("Votre compte est verrouillé.");
+        }
     }
 
     @Override
@@ -172,6 +207,42 @@ public class AuthServiceImpl implements AuthentificationService{
         return new AuthResult(user, accessToken, refreshToken);
     }
 
+    // --- Méthodes Helper d'Authentification---
+
+    private void increaseFailedAttempts(UtilisateurEntity user) {
+        int newFailAttempts = user.getFailedAttempt() + 1;
+        user.setFailedAttempt(newFailAttempts);
+        
+        if (newFailAttempts >= MAX_FAILED_ATTEMPTS) {
+            lockUserAccount(user);
+        }
+        userRepository.save(user);
+    }
+
+    private void resetFailedAttempts(UtilisateurEntity user) {
+        user.setFailedAttempt(0);
+        user.setAccountLocked(false);
+        user.setLockTime(null);
+        userRepository.save(user);
+    }
+
+    private void lockUserAccount(UtilisateurEntity user) {
+        user.setAccountLocked(true);
+        user.setLockTime(LocalDateTime.now());
+    }
+
+    private boolean unlockWhenTimeExpired(UtilisateurEntity user) {
+        if (user.getLockTime().plusHours(LOCK_TIME_DURATION_HOURS).isBefore(LocalDateTime.now())) {
+            user.setAccountLocked(false);
+            user.setLockTime(null);
+            user.setFailedAttempt(0);
+            userRepository.save(user);
+            return true;
+        }
+        return false;
+    }
+
+    // --- Conversion Entity <-> DTO ---
     @Override
     public UtilisateurDto convertFromEntity(UtilisateurEntity user){
         var userProfile = UtilisateurDto.builder()

@@ -1,10 +1,9 @@
-package com.cameroun_tour.tourisme.voyageur.api;
+package com.cameroun_tour.tourisme.voyageur.model;
 
 import java.util.UUID;
 
 import org.springframework.hateoas.RepresentationModel;
 
-//import com.cameroun_tour.tourisme.evaluation.model.CommentaireDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -29,12 +29,6 @@ public class AvisModelAssembler extends RepresentationModelAssemblerSupport<Avis
                 .dateCreation(entity.getDateCreation())
                 .build();
 
-        // 1. Lien vers soi-même (Self)
-        // Supposons que tu aies une méthode getOneAvis dans AvisController
-        // dto.add(linkTo(methodOn(AvisController.class).getOneAvis(entity.getPublicId())).withSelfRel());
-
-        // 2. Liens d'action (Update / Delete)
-        // On ajoute ces liens car on est dans le contexte "Mes Avis"
         dto.add(linkTo(methodOn(AvisController.class).modifierUnAvis(dto)).withSelfRel());
         dto.add(linkTo(methodOn(AvisController.class).supprimerMonAvis(entity.getPublicId())).withRel("delete"));
 

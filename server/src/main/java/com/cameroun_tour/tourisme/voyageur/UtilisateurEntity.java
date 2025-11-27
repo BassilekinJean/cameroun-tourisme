@@ -65,6 +65,15 @@ public class UtilisateurEntity implements UserDetails{
     private String photoProfile;
 
     @Builder.Default
+    @Column(nullable = false)
+    private int failedAttempt = 0;
+
+    private LocalDateTime lockTime;
+
+    @Builder.Default
+    private boolean accountLocked = false; 
+
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     private Role role = Role.USER;
 

@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.cameroun_tour.tourisme.common.utils.ApiErrorResponse;
 
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
+
 
 @RestControllerAdvice(basePackages = "com.cameroun_tour.tourisme.voyageur")
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -27,5 +29,23 @@ public class VoyageurExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(RequestNotPermitted.class)
+    public ResponseEntity<ApiErrorResponse> handleRateLimitException(RequestNotPermitted ex) {
+        ApiErrorResponse body = new ApiErrorResponse(HttpStatus.TOO_MANY_REQUESTS.value(), ex.getMessage(), "Too Many Requests");
+        return new ResponseEntity<>(body, HttpStatus.TOO_MANY_REQUESTS);
+    }
 
+    @ExceptionHandler(VoyageurBadCredentialsException.class)
+    public ResponseEntity<ApiErrorResponse> handleBadCredentials(VoyageurBadCredentialsException ex) {
+        // 401 Unauthorized 
+        ApiErrorResponse body = new ApiErrorResponse(HttpStatus.UNAUTHORIZED.value(), ex.getMessage(), "Authentication Failed");
+        return new ResponseEntity<>(body, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<ApiErrorResponse> handleLocked(AccountLockedException ex) {
+        // 423 Locked est le code HTTP 
+        ApiErrorResponse body = new ApiErrorResponse(HttpStatus.LOCKED.value(), ex.getMessage(), "Account Locked");
+        return new ResponseEntity<>(body, HttpStatus.LOCKED);
+    }
 }

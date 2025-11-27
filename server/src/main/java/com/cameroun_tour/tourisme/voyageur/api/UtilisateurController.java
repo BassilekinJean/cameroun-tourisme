@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurService;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
+import com.cameroun_tour.tourisme.voyageur.model.VoyageurResponse;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
