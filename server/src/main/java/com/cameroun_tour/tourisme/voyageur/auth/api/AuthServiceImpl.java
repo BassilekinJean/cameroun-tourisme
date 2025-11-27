@@ -81,7 +81,7 @@ public class AuthServiceImpl implements AuthentificationService{
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(noRollbackFor = {VoyageurBadCredentialsException.class, BadCredentialsException.class})
     public AuthResult login(UtilisateurLoginDto request) { 
          // 1. Récupérer l'utilisateur (sans le mot de passe pour l'instant)
         UtilisateurEntity user = userRepository.findByUserEmail(request.email())
@@ -146,6 +146,7 @@ public class AuthServiceImpl implements AuthentificationService{
 
     @Override
     @SuppressWarnings("null")
+    @Transactional(readOnly = true)
     public String refreshToken(String refreshToken) {
         if (refreshToken == null || jwtService.isTokenInvalidated(refreshToken)) {
             throw new RuntimeException("Refresh token invalide ou blacklisté (1)");
