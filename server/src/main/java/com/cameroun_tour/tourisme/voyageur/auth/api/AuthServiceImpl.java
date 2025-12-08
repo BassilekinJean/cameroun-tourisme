@@ -1,6 +1,9 @@
 package com.cameroun_tour.tourisme.voyageur.auth.api;
 
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,22 +19,21 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.cameroun_tour.tourisme.common.auth.JWTutils;
 import com.cameroun_tour.tourisme.common.utils.enums.Role;
+import com.cameroun_tour.tourisme.etablissement.Etablissement;
+import com.cameroun_tour.tourisme.etablissement.api.EtablissementRepository;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.api.UtilisateurRepository;
 import com.cameroun_tour.tourisme.voyageur.auth.AuthentificationService;
-import com.cameroun_tour.tourisme.voyageur.model.UtilisateurLoginDto; 
-import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
-import com.cameroun_tour.tourisme.voyageur.model.UtilisateurRegistrationDto;
-
-import io.swagger.v3.oas.annotations.tags.Tag;
-
 import com.cameroun_tour.tourisme.voyageur.errors.AccountLockedException;
 import com.cameroun_tour.tourisme.voyageur.errors.EmailAlreadyExistsException;
 import com.cameroun_tour.tourisme.voyageur.errors.UserNotFoundException;
 import com.cameroun_tour.tourisme.voyageur.errors.VoyageurBadCredentialsException;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurLoginDto;
+import com.cameroun_tour.tourisme.voyageur.model.UtilisateurRegistrationDto;
 
-import java.time.LocalDateTime;
-import java.util.concurrent.TimeUnit;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 
 
 @Service
@@ -40,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 public class AuthServiceImpl implements AuthentificationService{
 
     private final UtilisateurRepository userRepository;
+    private final EtablissementRepository etablissementRepository;
     private final PasswordEncoder passwordEncoder;
     private final JWTutils jwtService;
     private final @Lazy AuthenticationManager authenticationManager;
@@ -84,38 +87,63 @@ public class AuthServiceImpl implements AuthentificationService{
     @Transactional(noRollbackFor = {VoyageurBadCredentialsException.class, BadCredentialsException.class})
     public AuthResult login(UtilisateurLoginDto request) { 
          // 1. Récupérer l'utilisateur (sans le mot de passe pour l'instant)
-        UtilisateurEntity user = userRepository.findByUserEmail(request.email())
+        Optional<UtilisateurEntity> userOpt = userRepository.findByUserEmail(request.email());
+
+        if (userOpt.isPresent()) {
+            UtilisateurEntity user = userOpt.get();
+            // 2. Vérifier si le compte est verrouillé
+            if (user.isAccountLocked()) {
+                if (unlockWhenTimeExpired(user)) {
+                    // Le temps est écoulé, on a déverrouillé, on continue
+                } else {
+                    throw new AccountLockedException("Votre compte est verrouillé. Réessayez dans 2 heures.");
+                }
+            }
+
+            try {
+                // 3. Tenter l'authentification
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(request.email(), request.password())
+                );
+                
+                // 4. SUCCÈS : Réinitialiser les compteurs
+                if (user.getFailedAttempt() > 0) {
+                    resetFailedAttempts(user);
+                }
+                return generateAndStoreTokens(convertFromEntity(user));
+
+            } catch (BadCredentialsException e) {
+                // 5. ÉCHEC : Incrémenter les tentatives
+                increaseFailedAttempts(user);
+                throw new VoyageurBadCredentialsException("Email ou mot de passe incorrect");
+            } catch (LockedException e) {
+                // Au cas où l'AuthenticationManager lance lui-même une LockedException
+                throw new AccountLockedException("Votre compte est verrouillé.");
+            }
+        } else {
+            // Essayer de trouver un établissement
+            Etablissement etablissement = etablissementRepository.findByEmail(request.email())
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé"));
 
-        // 2. Vérifier si le compte est verrouillé
-        if (user.isAccountLocked()) {
-            if (unlockWhenTimeExpired(user)) {
-                // Le temps est écoulé, on a déverrouillé, on continue
-            } else {
-                throw new AccountLockedException("Votre compte est verrouillé. Réessayez dans 2 heures.");
+            try {
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(request.email(), request.password())
+                );
+                return generateAndStoreTokens(convertFromEtablissement(etablissement));
+            } catch (BadCredentialsException e) {
+                throw new VoyageurBadCredentialsException("Email ou mot de passe incorrect");
             }
         }
+    }
 
-        try {
-            // 3. Tenter l'authentification
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.email(), request.password())
-            );
-            
-            // 4. SUCCÈS : Réinitialiser les compteurs
-            if (user.getFailedAttempt() > 0) {
-                resetFailedAttempts(user);
-            }
-            return generateAndStoreTokens(convertFromEntity(user));
-
-        } catch (BadCredentialsException e) {
-            // 5. ÉCHEC : Incrémenter les tentatives
-            increaseFailedAttempts(user);
-            throw new VoyageurBadCredentialsException("Email ou mot de passe incorrect");
-        } catch (LockedException e) {
-             // Au cas où l'AuthenticationManager lance lui-même une LockedException
-             throw new AccountLockedException("Votre compte est verrouillé.");
-        }
+    private UtilisateurDto convertFromEtablissement(Etablissement etablissement) {
+        return UtilisateurDto.builder()
+            .publicId(etablissement.getPublicId())
+            .nomComplet(etablissement.getNom())
+            .email(etablissement.getEmail())
+            .paysOrigine(etablissement.getVille())
+            .photoProfile(etablissement.getPhotoProfile())
+            .build();
     }
 
     @Override
