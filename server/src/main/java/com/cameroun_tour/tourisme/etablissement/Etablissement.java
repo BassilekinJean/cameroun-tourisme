@@ -30,8 +30,6 @@ public class Etablissement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    UUID publicId = UUID.randomUUID();
-
     @Column(unique = true)
     @NotBlank(message = "Le nom est obligatoire")
     private String nom;

@@ -10,5 +10,9 @@ import com.cameroun_tour.tourisme.etablissement.Etablissement;
 @Repository
 public interface EtablissementRepository extends JpaRepository<Etablissement, Long>{
 
+    boolean existsByEmail(String email);
+
+    Optional<Etablissement> findByEmail(String email);
+
     Optional<Etablissement> findByPublicId(java.util.UUID publicId);
 }
