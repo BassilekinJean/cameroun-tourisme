@@ -1,13 +1,13 @@
 package com.cameroun_tour.tourisme.voyageur.model;
 
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Builder;
 
-@Builder
 public record UtilisateurDto(
 
     UUID publicId,
@@ -22,7 +22,14 @@ public record UtilisateurDto(
     @NotBlank(message = "Le pays d'origine est obligatoire")
     String paysOrigine,
 
-    String photoProfile
-) {
+    String photoProfile,
 
+    Set<UUID> favorisIds
+
+) {
+    public UtilisateurDto {
+        if (favorisIds == null) {
+            favorisIds = new HashSet<>();
+        }
+    }
 }

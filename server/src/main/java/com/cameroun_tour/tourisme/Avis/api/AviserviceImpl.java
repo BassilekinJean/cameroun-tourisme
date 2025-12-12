@@ -19,6 +19,7 @@ import com.cameroun_tour.tourisme.voyageur.UtilisateurService;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +32,13 @@ public class AviserviceImpl implements AvisServiceApi {
     private final UtilisateurService utilisateurService; 
     private final EtablissementServiceApi etablissementService;
 
+    @Override
+    public void save(Avis avis) {
+        if (avis == null) {
+            throw new IllegalArgumentException("L'avis ne peut pas être null");
+        }
+        avisRepository.save(avis);
+    }
 
     @EventListener
     @Transactional
@@ -77,7 +85,7 @@ public class AviserviceImpl implements AvisServiceApi {
 
         var pageable = PageRequest.of(page, size, sort);
 
-        return avisRepository.findAll(pageable);
+        return avisRepository.findByLieuConcerne_Id(lieuId, pageable);
     }
 
     public Page<AvisDto> utilisateurAvis(UUID userPublicId, int page, int size, String sortBy,
@@ -94,6 +102,7 @@ public class AviserviceImpl implements AvisServiceApi {
                             avis.getAuteur().getPhotoProfile(),
                             avis.getAuteur().getNomComplet(),
                             avis.getDateCreation(),
+                            avis.getNombreLikes(),
                             avis.getNote()
                         ));
     }
@@ -116,5 +125,28 @@ public class AviserviceImpl implements AvisServiceApi {
         }
         var a = avis.get();
         return a;
+    }
+
+    @Override
+    @Transactional
+    public void toggleLike(UUID avisPublicId, String userEmail) {
+        // 1. Récupérer l'avis
+        Avis avis = avisRepository.findByPublicId(avisPublicId)
+                .orElseThrow(() -> new EntityNotFoundException("Avis introuvable"));
+
+        // 2. Récupérer l'utilisateur
+        UtilisateurEntity user = utilisateurService.findByEmail(userEmail);
+
+        // 3. Logique métier (exactement ce que tu avais dans UtilisateurService)
+        if (avis.getUsersWhoLiked().contains(user)) {
+            avis.getUsersWhoLiked().remove(user);
+            avis.setNombreLikes(Math.max(0, avis.getNombreLikes() - 1));
+        } else {
+            avis.getUsersWhoLiked().add(user);
+            avis.setNombreLikes(avis.getNombreLikes() + 1);
+        }
+
+        // 4. Sauvegarder
+        avisRepository.save(avis);
     }
 }

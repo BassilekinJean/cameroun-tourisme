@@ -10,6 +10,8 @@ import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
 
 public interface UtilisateurService {
 
+    void toggleFavori(UUID userPublicId, UUID etablissementPublicId);
+    
     void deleteAccountWithId(Long id);
 
     UtilisateurDto getUserProfile(UUID id);

@@ -22,8 +22,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 
@@ -46,6 +48,15 @@ public class UtilisateurController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(voyageurAssembler.toModel(user));
+    }
+
+    @PatchMapping("/addFavoris/{etablissementId}")
+    public ResponseEntity<Void> toggleFavori(
+            @AuthenticationPrincipal UtilisateurEntity currentUser,
+            @PathVariable UUID etablissementId) {
+        
+        userService.toggleFavori(currentUser.getPublicId(), etablissementId);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)

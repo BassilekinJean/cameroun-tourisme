@@ -28,4 +28,9 @@ public class Resilience4jConfig {
     public RateLimiter refreshRateLimiter(){
         return rateLimiterRegistry.rateLimiter("refreshRateLimiter");
     }
+
+    @Bean
+    public RateLimiter postAvisRateLimiter(){
+        return rateLimiterRegistry.rateLimiter("postAvisRateLimiter");
+    }
 }

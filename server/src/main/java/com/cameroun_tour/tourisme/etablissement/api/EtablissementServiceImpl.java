@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.cameroun_tour.tourisme.common.contracts.AvisCreationDto;
 import com.cameroun_tour.tourisme.common.events.AvisPublieEvent;
 import com.cameroun_tour.tourisme.etablissement.EtablissementServiceApi;
+import com.cameroun_tour.tourisme.etablissement.errors.LieuNotFoundException;
 import com.cameroun_tour.tourisme.etablissement.Etablissement;
 import com.cameroun_tour.tourisme.etablissement.model.LieuRegistrationDto;
 
@@ -27,6 +28,20 @@ public class EtablissementServiceImpl implements EtablissementServiceApi {
     public void registerLieu(LieuRegistrationDto dto) {
 
         
+    }
+
+    @Override
+    public void save(Etablissement etablissement) {
+        if (etablissement == null) {
+            throw new LieuNotFoundException("L'établissement ne peut pas être null");
+        }
+        etablissementRepository.save(etablissement);
+    }
+
+    @Override
+    public Etablissement findByPublicId(java.util.UUID publicId) {
+        return etablissementRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new EntityNotFoundException("Établissement non trouvé avec l'ID public : " + publicId));
     }
 
     @Override

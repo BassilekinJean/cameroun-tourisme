@@ -27,9 +27,11 @@ public class VoyageurAssembler extends RepresentationModelAssemblerSupport<Utili
         model.setEmail(entity.getUserEmail());
         model.setPaysOrigine(entity.getPaysOrigine());
         model.setPhotoProfile(entity.getPhotoProfile());
+        model.setFavorisIds(entity.getFavoris().stream().map(fav -> fav.getPublicId()).collect(java.util.stream.Collectors.toSet()));
+
 
         model.add(linkTo(methodOn(UtilisateurController.class).getProfileWithId(entity.getPublicId())).withSelfRel());
-        model.add(linkTo(methodOn(UtilisateurController.class).listerTousLesUsers(0, 10, "id", "asc", null)).withRel("users"));
+        
         
         return model;
     }

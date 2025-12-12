@@ -1,5 +1,6 @@
 package com.cameroun_tour.tourisme.voyageur.model;
 
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.hateoas.RepresentationModel;
@@ -22,4 +23,5 @@ public class VoyageurResponse extends RepresentationModel<VoyageurResponse> {
     private String email;
     private String paysOrigine;
     private String photoProfile;
+    Set<UUID> favorisIds;
 }

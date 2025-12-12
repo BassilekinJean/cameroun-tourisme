@@ -9,6 +9,10 @@ import com.cameroun_tour.tourisme.common.events.AvisPublieEvent;
 
 public interface AvisServiceApi {
 
+    void toggleLike(UUID avisPublicId, String userEmail);
+
+    void save(Avis avis);
+
     Avis getOneAvis(UUID id);
 
     void onAvisPublier(AvisPublieEvent event);

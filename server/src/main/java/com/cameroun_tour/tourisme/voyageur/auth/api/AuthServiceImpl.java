@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.cameroun_tour.tourisme.common.auth.JWTutils;
 import com.cameroun_tour.tourisme.common.utils.enums.Role;
+import com.cameroun_tour.tourisme.etablissement.Etablissement;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.api.UtilisateurRepository;
 import com.cameroun_tour.tourisme.voyageur.auth.AuthentificationService;
@@ -32,6 +33,7 @@ import com.cameroun_tour.tourisme.voyageur.errors.VoyageurBadCredentialsExceptio
 
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -246,13 +248,15 @@ public class AuthServiceImpl implements AuthentificationService{
     // --- Conversion Entity <-> DTO ---
     @Override
     public UtilisateurDto convertFromEntity(UtilisateurEntity user){
-        var userProfile = UtilisateurDto.builder()
-                                        .publicId(user.getPublicId())
-                                        .nomComplet(user.getNomComplet())
-                                        .email(user.getUserEmail())
-                                        .paysOrigine(user.getPaysOrigine())
-                                        .photoProfile(user.getPhotoProfile())
-                                        .build();
-        return userProfile;
+       return new UtilisateurDto(
+            user.getPublicId(),
+            user.getNomComplet(),
+            user.getUserEmail(),
+            user.getPaysOrigine(),
+            user.getPhotoProfile(),
+            user.getFavoris().stream()
+                .map(Etablissement::getPublicId)
+                .collect(Collectors.toSet())
+        );
     }
 }

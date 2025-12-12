@@ -32,5 +32,7 @@ public class AvisDto extends RepresentationModel<AvisDto>{
 
     LocalDate dateCreation;
 
+    int nombreFavoris;
+
     private @Min(1) @Max(5) int note;
 }

@@ -27,6 +27,9 @@ public class AvisModelAssembler extends RepresentationModelAssemblerSupport<Avis
                 .message(entity.getMessage())
                 .note(entity.getNote())
                 .dateCreation(entity.getDateCreation())
+                .nombreFavoris(entity.getNombreLikes())
+                .auteurName(entity.getAuteur().getNomComplet())
+                .auteurPhoto(entity.getAuteur().getPhotoProfile())
                 .build();
 
         dto.add(linkTo(methodOn(AvisController.class).modifierUnAvis(dto)).withSelfRel());

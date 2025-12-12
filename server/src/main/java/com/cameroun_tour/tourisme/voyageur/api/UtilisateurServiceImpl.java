@@ -3,7 +3,9 @@ package com.cameroun_tour.tourisme.voyageur.api;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,12 +14,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cameroun_tour.tourisme.voyageur.UtilisateurService;
+import com.cameroun_tour.tourisme.etablissement.Etablissement;
+import com.cameroun_tour.tourisme.etablissement.EtablissementServiceApi;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.errors.UserNotFoundException;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurUpdatePasswordDto;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -26,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 public class UtilisateurServiceImpl implements UtilisateurService {
 
     private final UtilisateurRepository userRepository;
+    private final EtablissementServiceApi etablissementService;
 
 
     @Override
@@ -45,13 +51,22 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         if (user.isEmpty()) {
             throw new UserNotFoundException("Aucun utilisateur trouvé");
         }
+
+
         UtilisateurEntity u = user.get();
+
+        Set<UUID> favorisIds = u.getFavoris().stream()
+                .map(Etablissement::getPublicId)
+                .collect(Collectors.toSet());
+
         return new UtilisateurDto(u.getPublicId(), 
                                   u.getNomComplet(),
                                   u.getUserEmail(),
                                   u.getPaysOrigine(),
-                                  u.getPhotoProfile());
+                                  u.getPhotoProfile(),
+                                  favorisIds);
     }
+
 
     @Override
     @Transactional
@@ -104,6 +119,37 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         
         userRepository.save(user);
     }
+
+    @Transactional
+    public void toggleFavori(UUID userPublicId, UUID etablissementPublicId) {
+        // 1. Récupérer l'utilisateur
+        UtilisateurEntity user = userRepository.findByPublicId(userPublicId)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur introuvable"));
+
+        // 2. Récupérer l'établissement
+        Etablissement lieu = etablissementService.findByPublicId(etablissementPublicId);
+
+        if(lieu == null){
+            throw new EntityNotFoundException("Lieu Inconnu");
+        }
+        // 3. Vérifier et Basculer (Toggle)
+        if (user.getFavoris().contains(lieu)) {
+            // CAS 1 : On retire le favori
+            user.getFavoris().remove(lieu);
+            // On décrémente le compteur (en évitant les négatifs par sécurité)
+            lieu.setNombreFavoris(Math.max(0, lieu.getNombreFavoris() - 1));
+        } else {
+            // CAS 2 : On ajoute le favori
+            user.getFavoris().add(lieu);
+            // On incrémente le compteur
+            lieu.setNombreFavoris(lieu.getNombreFavoris() + 1);
+        }
+        
+        // 4. Sauvegarder (JPA gère la table de jointure user_favoris automatiquement)
+        userRepository.save(user);
+        etablissementService.save(lieu);
+    }
+
 
     @Override
     @Transactional(readOnly = true)
