@@ -1,7 +1,6 @@
 package com.cameroun_tour.tourisme.voyageur.auth.api;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -30,17 +29,15 @@ import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurLoginDto;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurRegistrationDto;
 
-import java.time.LocalDateTime;
-import java.util.concurrent.TimeUnit;
-
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 @Tag(name = "User Authentification Service", description = "Logique Métier de gestion de la connexion et l'inscription des utilisateurs")
-public class AuthServiceImpl implements AuthentificationService{
+public class AuthServiceImpl implements AuthentificationService {
 
     private final UtilisateurRepository userRepository;
-    private final EtablissementRepository etablissementRepository;
     private final PasswordEncoder passwordEncoder;
     private final JWTutils jwtService;
     private final @Lazy AuthenticationManager authenticationManager;
@@ -84,64 +81,36 @@ public class AuthServiceImpl implements AuthentificationService{
     @Override
     @Transactional(noRollbackFor = {VoyageurBadCredentialsException.class, BadCredentialsException.class})
     public AuthResult login(UtilisateurLoginDto request) { 
-         // 1. Récupérer l'utilisateur (sans le mot de passe pour l'instant)
-        Optional<UtilisateurEntity> userOpt = userRepository.findByUserEmail(request.email());
+        // Ce service gère uniquement l'authentification des voyageurs
+        UtilisateurEntity user = userRepository.findByUserEmail(request.email())
+                .orElseThrow(() -> new UserNotFoundException("Voyageur non trouvé avec cet email"));
 
-        if (userOpt.isPresent()) {
-            UtilisateurEntity user = userOpt.get();
-            // 2. Vérifier si le compte est verrouillé
-            if (user.isAccountLocked()) {
-                if (unlockWhenTimeExpired(user)) {
-                    // Le temps est écoulé, on a déverrouillé, on continue
-                } else {
-                    throw new AccountLockedException("Votre compte est verrouillé. Réessayez dans 2 heures.");
-                }
-            }
-
-            try {
-                // 3. Tenter l'authentification
-                authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(request.email(), request.password())
-                );
-                
-                // 4. SUCCÈS : Réinitialiser les compteurs
-                if (user.getFailedAttempt() > 0) {
-                    resetFailedAttempts(user);
-                }
-                return generateAndStoreTokens(convertFromEntity(user));
-
-            } catch (BadCredentialsException e) {
-                // 5. ÉCHEC : Incrémenter les tentatives
-                increaseFailedAttempts(user);
-                throw new VoyageurBadCredentialsException("Email ou mot de passe incorrect");
-            } catch (LockedException e) {
-                // Au cas où l'AuthenticationManager lance lui-même une LockedException
-                throw new AccountLockedException("Votre compte est verrouillé.");
-            }
-        } else {
-            // Essayer de trouver un établissement
-            Etablissement etablissement = etablissementRepository.findByEmail(request.email())
-                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé"));
-
-            try {
-                authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(request.email(), request.password())
-                );
-                return generateAndStoreTokens(convertFromEtablissement(etablissement));
-            } catch (BadCredentialsException e) {
-                throw new VoyageurBadCredentialsException("Email ou mot de passe incorrect");
+        // 1. Vérifier si le compte est verrouillé
+        if (user.isAccountLocked()) {
+            if (!unlockWhenTimeExpired(user)) {
+                throw new AccountLockedException("Votre compte est verrouillé. Réessayez dans 2 heures.");
             }
         }
-    }
 
-    private UtilisateurDto convertFromEtablissement(Etablissement etablissement) {
-        return UtilisateurDto.builder()
-            .publicId(etablissement.getPublicId())
-            .nomComplet(etablissement.getNom())
-            .email(etablissement.getEmail())
-            .paysOrigine(etablissement.getVille())
-            .photoProfile(etablissement.getPhotoProfile())
-            .build();
+        try {
+            // 2. Tenter l'authentification
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.email(), request.password())
+            );
+            
+            // 3. SUCCÈS : Réinitialiser les compteurs
+            if (user.getFailedAttempt() > 0) {
+                resetFailedAttempts(user);
+            }
+            return generateAndStoreTokens(convertFromEntity(user));
+
+        } catch (BadCredentialsException e) {
+            // 4. ÉCHEC : Incrémenter les tentatives
+            increaseFailedAttempts(user);
+            throw new VoyageurBadCredentialsException("Email ou mot de passe incorrect");
+        } catch (LockedException e) {
+            throw new AccountLockedException("Votre compte est verrouillé.");
+        }
     }
 
     @Override
@@ -278,9 +247,7 @@ public class AuthServiceImpl implements AuthentificationService{
             user.getUserEmail(),
             user.getPaysOrigine(),
             user.getPhotoProfile(),
-            user.getFavoris().stream()
-                .map(Etablissement::getPublicId)
-                .collect(Collectors.toSet())
+            user.getFavorisIds() // Directement les UUIDs, plus de mapping nécessaire
         );
     }
 }

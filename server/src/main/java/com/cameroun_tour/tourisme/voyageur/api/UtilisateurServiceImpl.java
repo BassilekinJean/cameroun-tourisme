@@ -3,10 +3,9 @@ package com.cameroun_tour.tourisme.voyageur.api;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -14,15 +13,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cameroun_tour.tourisme.voyageur.UtilisateurService;
-import com.cameroun_tour.tourisme.etablissement.Etablissement;
-import com.cameroun_tour.tourisme.etablissement.EtablissementServiceApi;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.errors.UserNotFoundException;
+import com.cameroun_tour.tourisme.voyageur.events.FavoriToggledEvent;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurUpdatePasswordDto;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -31,7 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class UtilisateurServiceImpl implements UtilisateurService {
 
     private final UtilisateurRepository userRepository;
-    private final EtablissementServiceApi etablissementService;
+    private final ApplicationEventPublisher eventPublisher;
 
 
     @Override
@@ -47,24 +44,15 @@ public class UtilisateurServiceImpl implements UtilisateurService {
     @Override
     @Transactional(readOnly = true)
     public UtilisateurDto getUserProfile(UUID id){
-        Optional<UtilisateurEntity> user = userRepository.findByPublicId(id);
-        if (user.isEmpty()) {
-            throw new UserNotFoundException("Aucun utilisateur trouvé");
-        }
-
-
-        UtilisateurEntity u = user.get();
-
-        Set<UUID> favorisIds = u.getFavoris().stream()
-                .map(Etablissement::getPublicId)
-                .collect(Collectors.toSet());
+        UtilisateurEntity u = userRepository.findByPublicId(id)
+                .orElseThrow(() -> new UserNotFoundException("Aucun utilisateur trouvé"));
 
         return new UtilisateurDto(u.getPublicId(), 
                                   u.getNomComplet(),
                                   u.getUserEmail(),
                                   u.getPaysOrigine(),
                                   u.getPhotoProfile(),
-                                  favorisIds);
+                                  u.getFavorisIds()); // Directement les UUIDs
     }
 
 
@@ -126,28 +114,23 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         UtilisateurEntity user = userRepository.findByPublicId(userPublicId)
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur introuvable"));
 
-        // 2. Récupérer l'établissement
-        Etablissement lieu = etablissementService.findByPublicId(etablissementPublicId);
-
-        if(lieu == null){
-            throw new EntityNotFoundException("Lieu Inconnu");
-        }
-        // 3. Vérifier et Basculer (Toggle)
-        if (user.getFavoris().contains(lieu)) {
+        // 2. Vérifier et Basculer (Toggle) - on travaille avec les UUIDs
+        boolean wasAdded;
+        if (user.getFavorisIds().contains(etablissementPublicId)) {
             // CAS 1 : On retire le favori
-            user.getFavoris().remove(lieu);
-            // On décrémente le compteur (en évitant les négatifs par sécurité)
-            lieu.setNombreFavoris(Math.max(0, lieu.getNombreFavoris() - 1));
+            user.getFavorisIds().remove(etablissementPublicId);
+            wasAdded = false;
         } else {
             // CAS 2 : On ajoute le favori
-            user.getFavoris().add(lieu);
-            // On incrémente le compteur
-            lieu.setNombreFavoris(lieu.getNombreFavoris() + 1);
+            user.getFavorisIds().add(etablissementPublicId);
+            wasAdded = true;
         }
         
-        // 4. Sauvegarder (JPA gère la table de jointure user_favoris automatiquement)
+        // 3. Sauvegarder l'utilisateur
         userRepository.save(user);
-        etablissementService.save(lieu);
+        
+        // 4. Publier un événement pour que le module Etablissement mette à jour son compteur
+        eventPublisher.publishEvent(new FavoriToggledEvent(etablissementPublicId, wasAdded));
     }
 
 

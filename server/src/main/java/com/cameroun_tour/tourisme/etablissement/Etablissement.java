@@ -26,9 +26,12 @@ import lombok.Data;
 @Entity
 public class Etablissement {
 
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    private UUID publicId = UUID.randomUUID();
 
     @Column(unique = true)
     @NotBlank(message = "Le nom est obligatoire")

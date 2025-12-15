@@ -20,7 +20,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.cameroun_tour.tourisme.common.auth.AuthUserDetailsService;
+import com.cameroun_tour.tourisme.common.auth.CompositeUserDetailsService;
 import com.cameroun_tour.tourisme.common.auth.JWTutils;
 import com.cameroun_tour.tourisme.common.auth.JwtAuthFilter;
 import com.cameroun_tour.tourisme.common.auth.Oauth2AuthenticationSuccessHandler;
@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
     private final JWTutils jwtUtils;
-    private final AuthUserDetailsService authUserDetailsService;
+    private final CompositeUserDetailsService userDetailsService;
     
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -41,14 +41,14 @@ public class SecurityConfig {
     
     @Bean
     public JwtAuthFilter jwtAuthFilter() {
-        return new JwtAuthFilter(jwtUtils, authUserDetailsService);
+        return new JwtAuthFilter(jwtUtils, userDetailsService);
     }
 
     @SuppressWarnings("deprecation")
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(authUserDetailsService);
+        authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }

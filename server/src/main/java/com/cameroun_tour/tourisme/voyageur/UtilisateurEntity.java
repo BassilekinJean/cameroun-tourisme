@@ -14,9 +14,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.cameroun_tour.tourisme.common.utils.enums.Role;
-import com.cameroun_tour.tourisme.etablissement.Etablissement;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
@@ -24,8 +25,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -80,13 +79,15 @@ public class UtilisateurEntity implements UserDetails{
     private Role role = Role.USER;
 
 
-    @ManyToMany
-    @JoinTable(
-            name = "user_favoris", 
-            joinColumns = @JoinColumn(name = "utilisateur_entity_id"),
-            inverseJoinColumns = @JoinColumn(name = "etablissement_public_id"))
+    // Stocke les publicId (UUID) des établissements favoris
+    // Cela évite une dépendance JPA directe vers le module etablissement
+    @ElementCollection
+    @CollectionTable(
+            name = "user_favoris",
+            joinColumns = @JoinColumn(name = "utilisateur_entity_id"))
+    @Column(name = "etablissement_public_id")
     @Builder.Default
-    private Set<Etablissement> favoris = new HashSet<>();
+    private Set<UUID> favorisIds = new HashSet<>();
 
     @CurrentTimestamp
     @Column(updatable = false)

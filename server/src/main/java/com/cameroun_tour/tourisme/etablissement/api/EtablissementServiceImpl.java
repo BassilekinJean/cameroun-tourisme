@@ -12,6 +12,7 @@ import com.cameroun_tour.tourisme.common.contracts.AvisCreationDto;
 import com.cameroun_tour.tourisme.common.events.AvisPublieEvent;
 import com.cameroun_tour.tourisme.etablissement.Etablissement;
 import com.cameroun_tour.tourisme.etablissement.EtablissementServiceApi;
+import com.cameroun_tour.tourisme.etablissement.errors.LieuNotFoundException;
 import com.cameroun_tour.tourisme.etablissement.Etablissement;
 import com.cameroun_tour.tourisme.etablissement.model.LieuRegistrationDto;
 
@@ -91,9 +92,9 @@ public class EtablissementServiceImpl implements EtablissementServiceApi {
                             new EntityNotFoundException("Établissement non trouvé avec l'ID : " + id));
     }
 
-    @Override
-    public List<Etablissement> listerTousLesEtablissements() {
-        return etablissementRepository.findAll();
-    }
+    // @Override
+    // public List<Etablissement> listerTousLesEtablissements() {
+    //     return etablissementRepository.findAll();
+    // }
     
 }
