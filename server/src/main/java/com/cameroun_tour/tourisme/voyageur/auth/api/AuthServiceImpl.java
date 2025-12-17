@@ -259,7 +259,23 @@ public class AuthServiceImpl implements AuthentificationService {
     // --- Méthodes OTP ---
     
     @Override
-    public void sendOtpForEmail(String email) {
+    public void sendOtpForRegistration(String email) {
+        // Vérifier que l'email n'est pas déjà utilisé
+        if (userRepository.findByUserEmail(email).isPresent()) {
+            throw new EmailAlreadyExistsException("Un compte avec cet email existe déjà");
+        }
+        // Envoyer le code OTP par email
+        emailService.sendOtp(email);
+    }
+    
+    @Override
+    public void sendOtpForPasswordReset(String email) {
+        // Vérifier que l'email existe
+        if (userRepository.findByUserEmail(email).isEmpty()) {
+            // On ne révèle pas que l'email n'existe pas pour des raisons de sécurité
+            // On log juste et on ne fait rien
+            return;
+        }
         // Envoyer le code OTP par email
         emailService.sendOtp(email);
     }

@@ -25,10 +25,18 @@ public interface AuthentificationService {
     UtilisateurDto convertFromEntity(UtilisateurEntity user);
     
     /**
-     * Envoie un code OTP pour la vérification d'email (inscription ou reset password)
+     * Envoie un code OTP pour la vérification d'email lors de l'inscription
+     * Vérifie que l'email n'est pas déjà utilisé
      * @param email L'email de l'utilisateur
      */
-    void sendOtpForEmail(String email);
+    void sendOtpForRegistration(String email);
+    
+    /**
+     * Envoie un code OTP pour la réinitialisation du mot de passe
+     * Vérifie que l'email existe dans la base de données
+     * @param email L'email de l'utilisateur
+     */
+    void sendOtpForPasswordReset(String email);
     
     /**
      * Vérifie un code OTP

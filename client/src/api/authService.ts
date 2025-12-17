@@ -4,7 +4,7 @@
  */
 
 import apiClient, { getErrorMessage } from './config';
-import type { User, UserRegistrationData, UserLoginData, AuthResponse, UtilisateurDto } from './types';
+import type { User, UserRegistrationData, UserLoginData, AuthResponse, UtilisateurDto, ApiResponse } from './types';
 
 // Le backend utilise /api/auth pour l'authentification
 const AUTH_BASE = '/auth';
@@ -114,6 +114,94 @@ export const checkAuth = async (): Promise<User | null> => {
   return getCurrentUser();
 };
 
+// ==================== OTP FUNCTIONS ====================
+
+/**
+ * Envoyer un code OTP par email
+ */
+export const sendOtp = async (email: string): Promise<ApiResponse<{ message: string }>> => {
+  try {
+    const response = await apiClient.post<{ message: string; email: string }>(`${AUTH_BASE}/send-otp`, { email });
+    return {
+      success: true,
+      data: response.data,
+      message: response.data.message,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: getErrorMessage(error),
+    };
+  }
+};
+
+/**
+ * Vérifier un code OTP
+ */
+export const verifyOtp = async (email: string, otp: string): Promise<ApiResponse<{ message: string }>> => {
+  try {
+    const response = await apiClient.post<{ message: string }>(`${AUTH_BASE}/verify-otp`, { email, otp });
+    return {
+      success: true,
+      data: response.data,
+      message: response.data.message,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: getErrorMessage(error),
+    };
+  }
+};
+
+/**
+ * Demander une réinitialisation de mot de passe (envoie OTP)
+ */
+export const forgotPassword = async (email: string): Promise<ApiResponse<{ message: string }>> => {
+  try {
+    const response = await apiClient.post<{ message: string }>(`${AUTH_BASE}/forgot-password`, { email });
+    return {
+      success: true,
+      data: response.data,
+      message: response.data.message,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: getErrorMessage(error),
+    };
+  }
+};
+
+/**
+ * Réinitialiser le mot de passe avec code OTP
+ */
+export const resetPassword = async (
+  email: string,
+  otp: string,
+  newPassword: string,
+  confirmPassword: string
+): Promise<ApiResponse<{ message: string }>> => {
+  try {
+    const response = await apiClient.post<{ message: string }>(`${AUTH_BASE}/reset-password`, {
+      email,
+      otp,
+      newPassword,
+      confirmPassword,
+    });
+    return {
+      success: true,
+      data: response.data,
+      message: response.data.message,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: getErrorMessage(error),
+    };
+  }
+};
+
 export default {
   register,
   login,
@@ -121,4 +209,8 @@ export default {
   refreshToken,
   getCurrentUser,
   checkAuth,
+  sendOtp,
+  verifyOtp,
+  forgotPassword,
+  resetPassword,
 };

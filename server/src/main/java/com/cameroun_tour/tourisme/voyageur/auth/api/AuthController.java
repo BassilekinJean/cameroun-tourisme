@@ -109,7 +109,7 @@ public class AuthController {
         @ApiResponse(responseCode = "429", description = "Trop de demandes - veuillez patienter")
     })
     public ResponseEntity<Map<String, String>> sendOtp(@Valid @RequestBody OtpRequestDto request) {
-        authService.sendOtpForEmail(request.email());
+        authService.sendOtpForRegistration(request.email());
         return ResponseEntity.ok(Map.of(
             "message", "Un code de vérification a été envoyé à votre adresse email",
             "email", request.email()
@@ -138,7 +138,7 @@ public class AuthController {
     })
     public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody OtpRequestDto request) {
         // On envoie toujours la même réponse pour ne pas révéler si l'email existe
-        authService.sendOtpForEmail(request.email());
+        authService.sendOtpForPasswordReset(request.email());
         return ResponseEntity.ok(Map.of(
             "message", "Si un compte existe avec cet email, un code de vérification sera envoyé"
         ));
