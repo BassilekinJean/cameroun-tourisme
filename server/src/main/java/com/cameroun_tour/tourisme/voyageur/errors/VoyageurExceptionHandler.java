@@ -48,4 +48,18 @@ public class VoyageurExceptionHandler {
         ApiErrorResponse body = new ApiErrorResponse(HttpStatus.LOCKED.value(), ex.getMessage(), "Account Locked");
         return new ResponseEntity<>(body, HttpStatus.LOCKED);
     }
+
+    @ExceptionHandler(OtpInvalidException.class)
+    public ResponseEntity<ApiErrorResponse> handleOtpInvalid(OtpInvalidException ex) {
+        // 400 Bad Request - Code OTP incorrect
+        ApiErrorResponse body = new ApiErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), "OTP_INVALID");
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(OtpExpiredException.class)
+    public ResponseEntity<ApiErrorResponse> handleOtpExpired(OtpExpiredException ex) {
+        // 410 Gone - Code OTP expiré
+        ApiErrorResponse body = new ApiErrorResponse(HttpStatus.GONE.value(), ex.getMessage(), "OTP_EXPIRED");
+        return new ResponseEntity<>(body, HttpStatus.GONE);
+    }
 }

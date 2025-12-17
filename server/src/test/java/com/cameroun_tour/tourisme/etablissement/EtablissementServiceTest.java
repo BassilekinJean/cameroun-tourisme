@@ -23,6 +23,7 @@ import com.cameroun_tour.tourisme.etablissement.api.EtablissementServiceImpl;
 import com.cameroun_tour.tourisme.etablissement.model.LieuRegistrationDto;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 public class EtablissementServiceTest {
 
     @Mock

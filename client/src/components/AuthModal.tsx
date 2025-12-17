@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { X, Mail, Lock, User, Eye, EyeOff, Shield, Phone, KeyRound } from 'lucide-react';
+import { X, Mail, Lock, User, Eye, EyeOff, Shield, Phone, KeyRound, Loader2 } from 'lucide-react';
+import { login, register } from '../api/authService';
+import type { User as UserType } from '../api/types';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAuthSuccess: (user: { firstName: string; lastName: string; email: string; phone?: string; countryCode?: string }) => void;
+  onAuthSuccess: (user: UserType) => void;
 }
 
 type AuthView = 'login' | 'register' | 'otp' | 'forgot-password' | 'reset-otp';
@@ -12,25 +14,24 @@ type AuthView = 'login' | 'register' | 'otp' | 'forgot-password' | 'reset-otp';
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
   const [authView, setAuthView] = useState<AuthView>('login');
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
-  // Login form state
+  // Login form state - ajusté pour correspondre au backend
   const [loginData, setLoginData] = useState({
-    firstName: '',
-    username: '',
+    email: '',
     password: ''
   });
 
-  // Register form state
+  // Register form state - ajusté pour correspondre au backend
   const [registerData, setRegisterData] = useState({
-    firstName: '',
-    lastName: '',
+    nomComplet: '',
     email: '',
-    phone: '',
-    countryCode: '+237',
+    paysOrigine: 'Cameroun',
     password: '',
-    confirmPassword: ''
+    validatePassword: ''
   });
 
   // Forgot password state
@@ -47,15 +48,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
   const [resetContact, setResetContact] = useState('');
 
   const resetAllForms = () => {
-    setLoginData({ firstName: '', username: '', password: '' });
+    setLoginData({ email: '', password: '' });
     setRegisterData({
-      firstName: '',
-      lastName: '',
+      nomComplet: '',
       email: '',
-      phone: '',
-      countryCode: '+237',
+      paysOrigine: 'Cameroun',
       password: '',
-      confirmPassword: ''
+      validatePassword: ''
     });
     setForgotPasswordData({
       contactMethod: 'email',
@@ -66,25 +65,25 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
     setOtp(['', '', '', '', '', '']);
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setError(null);
   };
 
   const switchView = (newView: AuthView) => {
     setIsTransitioning(true);
+    setError(null);
     setTimeout(() => {
       setAuthView(newView);
       setIsTransitioning(false);
       // Reset forms when switching views
       if (newView === 'login') {
-        setLoginData({ firstName: '', username: '', password: '' });
+        setLoginData({ email: '', password: '' });
       } else if (newView === 'register') {
         setRegisterData({
-          firstName: '',
-          lastName: '',
+          nomComplet: '',
           email: '',
-          phone: '',
-          countryCode: '+237',
+          paysOrigine: 'Cameroun',
           password: '',
-          confirmPassword: ''
+          validatePassword: ''
         });
       } else if (newView === 'forgot-password') {
         setForgotPasswordData({
@@ -97,59 +96,74 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
     }, 300);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login:', loginData);
+    setIsLoading(true);
+    setError(null);
     
-    // Simuler la connexion - dans un vrai système, vérifier les identifiants
-    // Pour la démo, on crée un utilisateur avec les données stockées
-    const savedUser = localStorage.getItem('camertrip_user');
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        onAuthSuccess(user);
-        alert(`Connexion réussie pour ${loginData.username}`);
-      } catch (error) {
-        alert(`Connexion réussie pour ${loginData.username}`);
-        // Si pas d'utilisateur sauvegardé, créer un utilisateur de démo
-        onAuthSuccess({
-          firstName: loginData.firstName || loginData.username.split(' ')[0] || 'John',
-          lastName: loginData.username.split(' ')[1] || 'Doe',
-          email: loginData.username
-        });
-      }
-    } else {
-      // Si pas d'utilisateur sauvegardé, créer un utilisateur de démo
-      // Utiliser le prénom fourni ou extraire du username
-      onAuthSuccess({
-        firstName: loginData.firstName || loginData.username.split(' ')[0] || 'John',
-        lastName: loginData.username.split(' ')[1] || 'Doe',
-        email: loginData.username
+    try {
+      const response = await login({
+        email: loginData.email,
+        password: loginData.password
       });
-      alert(`Connexion réussie pour ${loginData.username}`);
+      
+      if (response.success && response.user) {
+        // Sauvegarder l'utilisateur dans localStorage pour persistance
+        localStorage.setItem('camertrip_user', JSON.stringify(response.user));
+        onAuthSuccess(response.user);
+        resetAllForms();
+        onClose();
+      } else {
+        setError(response.message || 'Erreur de connexion');
+      }
+    } catch (err) {
+      setError('Une erreur est survenue lors de la connexion');
+    } finally {
+      setIsLoading(false);
     }
-    
-    resetAllForms();
-    onClose();
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (registerData.password !== registerData.confirmPassword) {
-      alert('Les mots de passe ne correspondent pas');
+    
+    if (registerData.password !== registerData.validatePassword) {
+      setError('Les mots de passe ne correspondent pas');
       return;
     }
-    console.log('Register:', registerData);
-    setUserEmail(registerData.email);
-    switchView('otp');
-    // Envoyer toutes les données de l'utilisateur incluant le téléphone
-    onAuthSuccess({ 
-      firstName: registerData.firstName, 
-      lastName: registerData.lastName, 
-      email: registerData.email,
-      phone: registerData.phone,
-      countryCode: registerData.countryCode
-    });
+    
+    if (registerData.password.length < 8) {
+      setError('Le mot de passe doit contenir au moins 8 caractères');
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await register({
+        nomComplet: registerData.nomComplet,
+        email: registerData.email,
+        paysOrigine: registerData.paysOrigine,
+        password: registerData.password,
+        validatePassword: registerData.validatePassword
+      });
+      
+      if (response.success && response.user) {
+        setUserEmail(registerData.email);
+        // Pour l'instant, on considère l'inscription réussie
+        // Dans le futur, implémenter la vérification OTP
+        localStorage.setItem('camertrip_user', JSON.stringify(response.user));
+        onAuthSuccess(response.user);
+        resetAllForms();
+        onClose();
+      } else {
+        setError(response.message || 'Erreur lors de l\'inscription');
+      }
+    } catch (err) {
+      setError('Une erreur est survenue lors de l\'inscription');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleForgotPassword = (e: React.FormEvent) => {
@@ -227,32 +241,25 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                 <p className="text-gray-600">Connectez-vous pour continuer</p>
               </div>
 
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
+                  {error}
+                </div>
+              )}
+
               <form onSubmit={handleLogin} className="space-y-5">
                 <div>
-                  <label className="block text-sm text-gray-700 mb-2">Prénom</label>
+                  <label className="block text-sm text-gray-700 mb-2">Email <span className="text-red-500">*</span></label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-600" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-600" />
                     <input
-                      type="text"
-                      value={loginData.firstName}
-                      onChange={(e) => setLoginData({ ...loginData, firstName: e.target.value })}
+                      type="email"
+                      value={loginData.email}
+                      onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
-                      placeholder="Entrez votre prénom (optionnel)"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-700 mb-2">Nom d'utilisateur <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-600" />
-                    <input
-                      type="text"
-                      value={loginData.username}
-                      onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
-                      placeholder="Entrez votre nom"
+                      placeholder="exemple@email.com"
                       required
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -268,6 +275,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                       className="w-full pl-10 pr-11 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                       placeholder="Entrez votre mot de passe"
                       required
+                      disabled={isLoading}
                     />
                     <button
                       type="button"
@@ -295,9 +303,17 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
 
                 <button
                   type="submit"
-                  className="w-full bg-green-700 text-white py-3 rounded-xl hover:bg-green-800 transition-colors duration-200"
+                  disabled={isLoading}
+                  className="w-full bg-green-700 text-white py-3 rounded-xl hover:bg-green-800 transition-colors duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Se connecter
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Connexion en cours...
+                    </>
+                  ) : (
+                    'Se connecter'
+                  )}
                 </button>
               </form>
 
@@ -327,28 +343,25 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                 <p className="text-sm text-gray-600">Rejoignez CamerTrip aujourd'hui</p>
               </div>
 
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
+                  {error}
+                </div>
+              )}
+
               <form onSubmit={handleRegister} className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-1.5">Prénom <span className="text-red-500">*</span></label>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1.5">Nom complet <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-600" />
                     <input
                       type="text"
-                      value={registerData.firstName}
-                      onChange={(e) => setRegisterData({ ...registerData, firstName: e.target.value })}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm"
-                      placeholder="Prénom"
+                      value={registerData.nomComplet}
+                      onChange={(e) => setRegisterData({ ...registerData, nomComplet: e.target.value })}
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm"
+                      placeholder="Prénom et Nom"
                       required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-1.5">Nom <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
-                      value={registerData.lastName}
-                      onChange={(e) => setRegisterData({ ...registerData, lastName: e.target.value })}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm"
-                      placeholder="Nom"
-                      required
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -364,39 +377,29 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                       className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm"
                       placeholder="exemple@email.com"
                       required
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1.5">Téléphone <span className="text-red-500">*</span></label>
-                  <div className="flex gap-2">
-                    <select
-                      value={registerData.countryCode}
-                      onChange={(e) => setRegisterData({ ...registerData, countryCode: e.target.value })}
-                      className="w-24 px-2 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm"
-                      required
-                    >
-                      <option value="+237">🇨🇲 +237</option>
-                      <option value="+33">🇫🇷 +33</option>
-                      <option value="+1">🇺🇸 +1</option>
-                      <option value="+44">🇬🇧 +44</option>
-                      <option value="+225">🇨🇮 +225</option>
-                      <option value="+221">🇸🇳 +221</option>
-                      <option value="+229">🇧🇯 +229</option>
-                    </select>
-                    <div className="relative flex-1">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-600" />
-                      <input
-                        type="tel"
-                        value={registerData.phone}
-                        onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm"
-                        placeholder="6 XX XX XX XX"
-                        required
-                      />
-                    </div>
-                  </div>
+                  <label className="block text-sm text-gray-700 mb-1.5">Pays d'origine</label>
+                  <select
+                    value={registerData.paysOrigine}
+                    onChange={(e) => setRegisterData({ ...registerData, paysOrigine: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm"
+                    disabled={isLoading}
+                  >
+                    <option value="Cameroun">🇨🇲 Cameroun</option>
+                    <option value="France">🇫🇷 France</option>
+                    <option value="États-Unis">🇺🇸 États-Unis</option>
+                    <option value="Canada">🇨🇦 Canada</option>
+                    <option value="Belgique">🇧🇪 Belgique</option>
+                    <option value="Suisse">🇨🇭 Suisse</option>
+                    <option value="Côte d'Ivoire">🇨🇮 Côte d'Ivoire</option>
+                    <option value="Sénégal">🇸🇳 Sénégal</option>
+                    <option value="Autre">🌍 Autre</option>
+                  </select>
                 </div>
 
                 <div>
@@ -408,9 +411,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                       value={registerData.password}
                       onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
                       className="w-full pl-10 pr-11 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm"
-                      placeholder="Minimum 8 caractères"
+                      placeholder="Minimum 8 caractères (1 majuscule, 1 chiffre, 1 spécial)"
                       required
                       minLength={8}
+                      disabled={isLoading}
                     />
                     <button
                       type="button"
@@ -420,19 +424,23 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Le mot de passe doit contenir au moins 8 caractères, une majuscule, un chiffre et un caractère spécial.
+                  </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1.5">Confirmer le mot de passe</label>
+                  <label className="block text-sm text-gray-700 mb-1.5">Confirmer le mot de passe <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-600" />
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
-                      value={registerData.confirmPassword}
-                      onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+                      value={registerData.validatePassword}
+                      onChange={(e) => setRegisterData({ ...registerData, validatePassword: e.target.value })}
                       className="w-full pl-10 pr-11 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm"
                       placeholder="Confirmez votre mot de passe"
                       required
+                      disabled={isLoading}
                     />
                     <button
                       type="button"
@@ -446,9 +454,17 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
 
                 <button
                   type="submit"
-                  className="w-full bg-green-700 text-white py-2.5 rounded-xl hover:bg-green-800 transition-colors duration-200 mt-4"
+                  disabled={isLoading}
+                  className="w-full bg-green-700 text-white py-2.5 rounded-xl hover:bg-green-800 transition-colors duration-200 mt-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  S'inscrire
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Inscription en cours...
+                    </>
+                  ) : (
+                    "S'inscrire"
+                  )}
                 </button>
               </form>
 

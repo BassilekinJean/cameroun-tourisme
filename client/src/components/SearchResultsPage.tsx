@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Search, MapPin, Star, Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Search, MapPin, Star, Filter, Loader2 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { DetailsItem } from './DetailsPage';
+import type { Etablissement, EtablissementCategorie } from '../api/types';
+import { searchEtablissements, getEtablissementsByCategorie, getAllEtablissements } from '../api/etablissementService';
 
 interface SearchResultsPageProps {
   searchQuery: string;
@@ -9,14 +11,113 @@ interface SearchResultsPageProps {
   onShowDetails: (item: DetailsItem) => void;
 }
 
+// Helper pour convertir un Etablissement API en DetailsItem
+const etablissementToDetailsItem = (e: Etablissement): DetailsItem => ({
+  id: e.publicId,
+  name: e.nom,
+  category: e.categorie === 'HOTEL' ? 'hotels' : 
+            e.categorie === 'RESTAURANT' ? 'restaurants' : 
+            e.categorie === 'ACTIVITE' ? 'activities' : 'popular',
+  image: e.imagePrincipale || 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800',
+  rating: e.noteMoyenne || 0,
+  description: e.description || '',
+  location: e.ville || 'Cameroun',
+  price: e.prixMoyen ? `${e.prixMoyen.toLocaleString()} FCFA` : undefined,
+  phone: e.telephone,
+  email: e.email,
+  amenities: e.commodites || [],
+  cuisine: e.categorie === 'RESTAURANT' ? 'Camerounaise' : undefined,
+});
+
 export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }: SearchResultsPageProps) {
   const [activeFilter, setActiveFilter] = useState<'all' | 'hotels' | 'restaurants' | 'activities' | 'destinations'>('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const [apiResults, setApiResults] = useState<Etablissement[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  // Base de données de recherche (à terme, cela viendrait d'une API)
-  const allItems: DetailsItem[] = [
+  // Charger les résultats de recherche depuis l'API
+  useEffect(() => {
+    const loadResults = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        let response;
+        
+        if (searchQuery.trim()) {
+          // Recherche par texte
+          response = await searchEtablissements(searchQuery, 0, 50);
+        } else {
+          // Charger tous les établissements si pas de requête
+          response = await getAllEtablissements(0, 50);
+        }
+        
+        if (response.success && response.data) {
+          setApiResults(response.data.content);
+        } else {
+          // Fallback vers les données statiques
+          setApiResults([]);
+        }
+      } catch (err) {
+        setError('Erreur lors de la recherche');
+        setApiResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadResults();
+  }, [searchQuery]);
+
+  // Charger par catégorie quand le filtre change
+  useEffect(() => {
+    const loadByCategory = async () => {
+      if (activeFilter === 'all') return;
+      
+      setIsLoading(true);
+      
+      try {
+        const categoryMap: Record<string, EtablissementCategorie> = {
+          hotels: 'HOTEL',
+          restaurants: 'RESTAURANT',
+          activities: 'ACTIVITE',
+          destinations: 'DESTINATION'
+        };
+        
+        const categorie = categoryMap[activeFilter];
+        if (categorie) {
+          const response = await getEtablissementsByCategorie(categorie, 0, 50);
+          if (response.success && response.data) {
+            // Filtrer aussi par la recherche si présente
+            let results = response.data.content;
+            if (searchQuery.trim()) {
+              const query = searchQuery.toLowerCase();
+              results = results.filter(e => 
+                e.nom.toLowerCase().includes(query) ||
+                e.ville?.toLowerCase().includes(query) ||
+                e.description?.toLowerCase().includes(query)
+              );
+            }
+            setApiResults(results);
+          }
+        }
+      } catch (err) {
+        // Ignorer les erreurs de filtre
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (activeFilter !== 'all') {
+      loadByCategory();
+    }
+  }, [activeFilter, searchQuery]);
+
+  // Données statiques de fallback
+  const staticItems: DetailsItem[] = [
     // Hôtels
     {
-      id: 1,
+      id: '1',
       name: 'Hôtel La Falaise',
       category: 'hotels',
       image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800',
@@ -29,7 +130,7 @@ export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }
       amenities: ['WiFi', 'Piscine', 'Restaurant', 'Spa', 'Parking']
     },
     {
-      id: 2,
+      id: '2',
       name: 'Hilton Douala',
       category: 'hotels',
       image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800',
@@ -42,7 +143,7 @@ export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }
       amenities: ['WiFi', 'Piscine', 'Salle de sport', 'Restaurant', 'Bar']
     },
     {
-      id: 3,
+      id: '3',
       name: 'Tou\'Ngou Hotel',
       category: 'hotels',
       image: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800',
@@ -56,7 +157,7 @@ export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }
     },
     // Restaurants
     {
-      id: 4,
+      id: '4',
       name: 'La Terrasse',
       category: 'restaurants',
       image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800',
@@ -68,7 +169,7 @@ export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }
       phone: '+237 222 21 45 67'
     },
     {
-      id: 5,
+      id: '5',
       name: 'Le Biniou',
       category: 'restaurants',
       image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800',
@@ -81,7 +182,7 @@ export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }
     },
     // Activités
     {
-      id: 6,
+      id: '6',
       name: 'Ascension du Mont Cameroun',
       category: 'activities',
       image: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800',
@@ -93,7 +194,7 @@ export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }
       price: '150 000 FCFA/personne'
     },
     {
-      id: 7,
+      id: '7',
       name: 'Safari Parc National de Waza',
       category: 'activities',
       image: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=800',
@@ -105,7 +206,7 @@ export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }
       price: '80 000 FCFA/personne'
     },
     {
-      id: 8,
+      id: '8',
       name: 'Visite des Chutes de la Lobé',
       category: 'activities',
       image: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=800',
@@ -117,7 +218,7 @@ export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }
       price: '25 000 FCFA/personne'
     },
     {
-      id: 9,
+      id: '9',
       name: 'Plongée à Limbé',
       category: 'activities',
       image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800',
@@ -129,7 +230,7 @@ export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }
       price: '45 000 FCFA/personne'
     },
     {
-      id: 10,
+      id: '10',
       name: 'Visite du Palais Royal de Foumban',
       category: 'popular',
       image: 'https://images.unsplash.com/photo-1523568129082-c691c7c35649?w=800',
@@ -140,7 +241,7 @@ export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }
       price: '5 000 FCFA/personne'
     },
     {
-      id: 11,
+      id: '11',
       name: 'Plages de Kribi',
       category: 'popular',
       image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800',
@@ -150,7 +251,7 @@ export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }
       detailedDescription: 'Les plages de Kribi comptent parmi les plus belles du Cameroun avec leur sable blanc et leurs eaux turquoise.'
     },
     {
-      id: 12,
+      id: '12',
       name: 'Lac Nyos',
       category: 'popular',
       image: 'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=800',
@@ -159,6 +260,12 @@ export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }
       location: 'Nord-Ouest',
       detailedDescription: 'Le Lac Nyos est un lac de cratère volcanique situé dans la région du Nord-Ouest du Cameroun.'
     }
+  ];
+
+  // Combiner les résultats de l'API avec les données statiques
+  const allItems: DetailsItem[] = [
+    ...apiResults.map(etablissementToDetailsItem),
+    ...(apiResults.length === 0 ? staticItems : [])
   ];
 
   // Filtrer les résultats par recherche
@@ -253,7 +360,21 @@ export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }
         </div>
 
         {/* Résultats */}
-        {filteredResults.length === 0 ? (
+        {isLoading ? (
+          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+            <Loader2 className="w-12 h-12 text-green-700 mx-auto mb-4 animate-spin" />
+            <h3 className="text-xl text-gray-900 mb-2">Recherche en cours...</h3>
+            <p className="text-gray-600">
+              Nous cherchons les meilleurs résultats pour vous
+            </p>
+          </div>
+        ) : error ? (
+          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+            <Search className="w-16 h-16 text-red-300 mx-auto mb-4" />
+            <h3 className="text-xl text-gray-900 mb-2">Erreur de recherche</h3>
+            <p className="text-gray-600">{error}</p>
+          </div>
+        ) : filteredResults.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-12 text-center">
             <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl text-gray-900 mb-2">Aucun résultat trouvé</h3>

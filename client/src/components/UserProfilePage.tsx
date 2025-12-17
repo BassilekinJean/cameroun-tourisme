@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { User, Mail, Phone, Lock, Camera, Save, X, Eye, EyeOff } from 'lucide-react';
-import { User as UserType } from '../App';
+import { User, Mail, MapPin, Lock, Camera, Save, X, Eye, EyeOff, Loader2 } from 'lucide-react';
+import type { User as UserType } from '../api/types';
+import { updateProfile } from '../api/userService';
 
 interface UserProfilePageProps {
   user: UserType;
@@ -10,12 +11,11 @@ interface UserProfilePageProps {
 
 export default function UserProfilePage({ user, onUpdateUser, onBackToHome }: UserProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: user.firstName,
-    lastName: user.lastName,
+    nomComplet: user.nomComplet,
     email: user.email,
-    phone: user.phone || '',
-    countryCode: user.countryCode || '+237',
+    paysOrigine: user.paysOrigine || 'Cameroun',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
@@ -26,7 +26,7 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome }: Us
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     // Clear error for this field
@@ -38,12 +38,8 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome }: Us
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'Le prénom est requis';
-    }
-
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Le nom est requis';
+    if (!formData.nomComplet.trim()) {
+      newErrors.nomComplet = 'Le nom complet est requis';
     }
 
     if (!formData.email.trim()) {
@@ -57,8 +53,8 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome }: Us
       if (!formData.currentPassword) {
         newErrors.currentPassword = 'Mot de passe actuel requis';
       }
-      if (formData.newPassword.length < 6) {
-        newErrors.newPassword = 'Minimum 6 caractères';
+      if (formData.newPassword.length < 8) {
+        newErrors.newPassword = 'Minimum 8 caractères';
       }
       if (formData.newPassword !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
@@ -69,25 +65,50 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome }: Us
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
 
-    // Mise à jour de l'utilisateur avec toutes les infos
-    const updatedUser: UserType = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      phone: formData.phone,
-      countryCode: formData.countryCode
-    };
+    setIsLoading(true);
 
-    onUpdateUser(updatedUser);
-    setIsEditing(false);
-    setSuccessMessage('Profil mis à jour avec succès !');
+    try {
+      // Appeler l'API pour mettre à jour le profil
+      const response = await updateProfile({
+        nomComplet: formData.nomComplet,
+        paysOrigine: formData.paysOrigine,
+      });
+
+      if (response.success && response.data) {
+        onUpdateUser(response.data);
+        setIsEditing(false);
+        setSuccessMessage('Profil mis à jour avec succès !');
+      } else {
+        // Mise à jour locale en cas d'échec API (mode dégradé)
+        const updatedUser: UserType = {
+          ...user,
+          nomComplet: formData.nomComplet,
+          paysOrigine: formData.paysOrigine,
+        };
+        onUpdateUser(updatedUser);
+        setIsEditing(false);
+        setSuccessMessage('Profil mis à jour localement');
+      }
+    } catch (error) {
+      // Mise à jour locale en cas d'erreur
+      const updatedUser: UserType = {
+        ...user,
+        nomComplet: formData.nomComplet,
+        paysOrigine: formData.paysOrigine,
+      };
+      onUpdateUser(updatedUser);
+      setIsEditing(false);
+      setSuccessMessage('Profil mis à jour localement');
+    } finally {
+      setIsLoading(false);
+    }
     
     // Réinitialiser les champs de mot de passe
     setFormData(prev => ({
@@ -104,11 +125,9 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome }: Us
   const handleCancel = () => {
     setIsEditing(false);
     setFormData({
-      firstName: user.firstName,
-      lastName: user.lastName,
+      nomComplet: user.nomComplet,
       email: user.email,
-      phone: user.phone || '',
-      countryCode: user.countryCode || '+237',
+      paysOrigine: user.paysOrigine || 'Cameroun',
       currentPassword: '',
       newPassword: '',
       confirmPassword: ''
@@ -117,7 +136,11 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome }: Us
   };
 
   const getUserInitials = () => {
-    return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    const parts = user.nomComplet.split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
+    }
+    return user.nomComplet.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -137,7 +160,11 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome }: Us
             {/* Avatar */}
             <div className="relative group">
               <div className="w-24 h-24 rounded-full bg-white text-green-600 flex items-center justify-center text-3xl shadow-lg">
-                {getUserInitials()}
+                {user.photoProfile ? (
+                  <img src={user.photoProfile} alt={user.nomComplet} className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  getUserInitials()
+                )}
               </div>
               <button className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Camera className="w-6 h-6 text-white" />
@@ -146,8 +173,14 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome }: Us
 
             {/* Info utilisateur */}
             <div>
-              <h1 className="text-3xl mb-2">{user.firstName} {user.lastName}</h1>
+              <h1 className="text-3xl mb-2">{user.nomComplet}</h1>
               <p className="text-green-100">{user.email}</p>
+              {user.paysOrigine && (
+                <p className="text-green-200 text-sm flex items-center gap-1 mt-1">
+                  <MapPin className="w-4 h-4" />
+                  {user.paysOrigine}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -177,59 +210,30 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome }: Us
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Prénom et Nom */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Prénom */}
-              <div>
-                <label className="block text-gray-700 mb-2">
-                  Prénom <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className={`w-full pl-11 pr-4 py-3 border rounded-lg transition-all ${
-                      isEditing 
-                        ? 'border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 bg-white' 
-                        : 'border-gray-200 bg-gray-50 cursor-not-allowed'
-                    } ${errors.firstName ? 'border-red-500' : ''}`}
-                    placeholder="Votre prénom"
-                  />
-                </div>
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-500">{errors.firstName}</p>
-                )}
+            {/* Nom complet */}
+            <div>
+              <label className="block text-gray-700 mb-2">
+                Nom complet <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  name="nomComplet"
+                  value={formData.nomComplet}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  className={`w-full pl-11 pr-4 py-3 border rounded-lg transition-all ${
+                    isEditing 
+                      ? 'border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 bg-white' 
+                      : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                  } ${errors.nomComplet ? 'border-red-500' : ''}`}
+                  placeholder="Votre nom complet"
+                />
               </div>
-
-              {/* Nom */}
-              <div>
-                <label className="block text-gray-700 mb-2">
-                  Nom <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className={`w-full pl-11 pr-4 py-3 border rounded-lg transition-all ${
-                      isEditing 
-                        ? 'border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 bg-white' 
-                        : 'border-gray-200 bg-gray-50 cursor-not-allowed'
-                    } ${errors.lastName ? 'border-red-500' : ''}`}
-                    placeholder="Votre nom"
-                  />
-                </div>
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-500">{errors.lastName}</p>
-                )}
-              </div>
+              {errors.nomComplet && (
+                <p className="mt-1 text-sm text-red-500">{errors.nomComplet}</p>
+              )}
             </div>
 
             {/* Email */}
@@ -244,63 +248,45 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome }: Us
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  disabled={!isEditing}
-                  className={`w-full pl-11 pr-4 py-3 border rounded-lg transition-all ${
-                    isEditing 
-                      ? 'border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 bg-white' 
-                      : 'border-gray-200 bg-gray-50 cursor-not-allowed'
-                  } ${errors.email ? 'border-red-500' : ''}`}
+                  disabled={true}
+                  className="w-full pl-11 pr-4 py-3 border border-gray-200 bg-gray-50 cursor-not-allowed rounded-lg"
                   placeholder="votre.email@exemple.com"
                 />
               </div>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-500">{errors.email}</p>
-              )}
+              <p className="mt-1 text-sm text-gray-500">L'email ne peut pas être modifié</p>
             </div>
 
-            {/* Téléphone */}
+            {/* Pays d'origine */}
             <div>
               <label className="block text-gray-700 mb-2">
-                Numéro de téléphone
+                Pays d'origine
               </label>
-              <div className="flex gap-3">
-                {/* Indicatif */}
-                <div className="relative w-32">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <select
-                    name="countryCode"
-                    value={formData.countryCode}
-                    onChange={(e) => setFormData(prev => ({ ...prev, countryCode: e.target.value }))}
-                    disabled={!isEditing}
-                    className={`w-full pl-11 pr-2 py-3 border rounded-lg transition-all appearance-none ${
-                      isEditing 
-                        ? 'border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 bg-white' 
-                        : 'border-gray-200 bg-gray-50 cursor-not-allowed'
-                    }`}
-                  >
-                    <option value="+237">🇨🇲 +237</option>
-                    <option value="+33">🇫🇷 +33</option>
-                    <option value="+1">🇺🇸 +1</option>
-                    <option value="+44">🇬🇧 +44</option>
-                    <option value="+32">🇧🇪 +32</option>
-                  </select>
-                </div>
-                {/* Numéro */}
-                <div className="flex-1">
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className={`w-full px-4 py-3 border rounded-lg transition-all ${
-                      isEditing 
-                        ? 'border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 bg-white' 
-                        : 'border-gray-200 bg-gray-50 cursor-not-allowed'
-                    }`}
-                    placeholder="6 XX XX XX XX"
-                  />
-                </div>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <select
+                  name="paysOrigine"
+                  value={formData.paysOrigine}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  className={`w-full pl-11 pr-4 py-3 border rounded-lg transition-all appearance-none ${
+                    isEditing 
+                      ? 'border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 bg-white' 
+                      : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                  }`}
+                >
+                  <option value="Cameroun">🇨🇲 Cameroun</option>
+                  <option value="France">🇫🇷 France</option>
+                  <option value="Belgique">🇧🇪 Belgique</option>
+                  <option value="Canada">🇨🇦 Canada</option>
+                  <option value="États-Unis">🇺🇸 États-Unis</option>
+                  <option value="Royaume-Uni">🇬🇧 Royaume-Uni</option>
+                  <option value="Allemagne">🇩🇪 Allemagne</option>
+                  <option value="Suisse">🇨🇭 Suisse</option>
+                  <option value="Sénégal">🇸🇳 Sénégal</option>
+                  <option value="Côte d'Ivoire">🇨🇮 Côte d'Ivoire</option>
+                  <option value="Nigeria">🇳🇬 Nigeria</option>
+                  <option value="Autre">🌍 Autre</option>
+                </select>
               </div>
             </div>
 
@@ -409,15 +395,26 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome }: Us
               <div className="flex gap-4 pt-6">
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                  disabled={isLoading}
+                  className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Save className="w-5 h-5" />
-                  Enregistrer les modifications
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Enregistrement...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      Enregistrer les modifications
+                    </>
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  disabled={isLoading}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                   Annuler
                 </button>

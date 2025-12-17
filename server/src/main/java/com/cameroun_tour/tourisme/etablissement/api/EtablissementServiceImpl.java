@@ -3,17 +3,21 @@ package com.cameroun_tour.tourisme.etablissement.api;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.cameroun_tour.tourisme.common.contracts.AvisCreationDto;
 import com.cameroun_tour.tourisme.common.events.AvisPublieEvent;
+import com.cameroun_tour.tourisme.common.utils.enums.TypeLieu;
 import com.cameroun_tour.tourisme.etablissement.Etablissement;
 import com.cameroun_tour.tourisme.etablissement.EtablissementServiceApi;
 import com.cameroun_tour.tourisme.etablissement.errors.LieuNotFoundException;
-import com.cameroun_tour.tourisme.etablissement.Etablissement;
 import com.cameroun_tour.tourisme.etablissement.model.LieuRegistrationDto;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -61,7 +65,7 @@ public class EtablissementServiceImpl implements EtablissementServiceApi {
     }
 
     @Override
-    public Etablissement findByPublicId(java.util.UUID publicId) {
+    public Etablissement findByPublicId(UUID publicId) {
         return etablissementRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new EntityNotFoundException("Établissement non trouvé avec l'ID public : " + publicId));
     }
@@ -92,9 +96,49 @@ public class EtablissementServiceImpl implements EtablissementServiceApi {
                             new EntityNotFoundException("Établissement non trouvé avec l'ID : " + id));
     }
 
-    // @Override
-    // public List<Etablissement> listerTousLesEtablissements() {
-    //     return etablissementRepository.findAll();
-    // }
+    @Override
+    @SuppressWarnings("null")
+    public Page<Etablissement> findAll(Pageable pageable) {
+        return etablissementRepository.findAll(pageable);
+    }
+
+    @Override
+    public Page<Etablissement> findByCategorie(TypeLieu categorie, Pageable pageable) {
+        return etablissementRepository.findByCategorie(categorie, pageable);
+    }
+
+    @Override
+    public Page<Etablissement> findByVille(String ville, Pageable pageable) {
+        return etablissementRepository.findByVilleContainingIgnoreCase(ville, pageable);
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public Page<Etablissement> search(String query, TypeLieu categorie, String ville, Pageable pageable) {
+        // Si aucun filtre, recherche simple
+        if (query == null || query.isBlank()) {
+            if (categorie != null) {
+                return etablissementRepository.findByCategorie(categorie, pageable);
+            }
+            if (ville != null && !ville.isBlank()) {
+                return etablissementRepository.findByVilleContainingIgnoreCase(ville, pageable);
+            }
+            return etablissementRepository.findAll(pageable);
+        }
+
+        // Recherche avec query
+        if (categorie != null) {
+            return etablissementRepository.searchByQueryAndCategorie(query, categorie, pageable);
+        }
+        if (ville != null && !ville.isBlank()) {
+            return etablissementRepository.searchByQueryAndVille(query, ville, pageable);
+        }
+        return etablissementRepository.searchByQuery(query, pageable);
+    }
+
+    @Override
+    public List<Etablissement> findPopular(int limit) {
+        return etablissementRepository.findTopByOrderByNombreFavorisDesc(PageRequest.of(0, limit));
+    }
     
 }

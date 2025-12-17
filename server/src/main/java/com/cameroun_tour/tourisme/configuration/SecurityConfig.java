@@ -64,7 +64,14 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             
             .authorizeHttpRequests(auth -> auth
+                // Endpoints d'authentification - accès public
                 .requestMatchers("/api/auth/**", "/oauth2/**", "/login/oauth2/code/**").permitAll()
+                // Endpoints de lecture des établissements - accès public
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/lieux/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/avis/**").permitAll()
+                // Endpoints de média/images - accès public en lecture
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/media/**").permitAll()
+                // Tout le reste nécessite une authentification
                 .anyRequest().authenticated()
             )
             

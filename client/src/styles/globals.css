@@ -181,7 +181,28 @@
       font-weight: var(--font-weight-normal);
       line-height: 1.5;
     }
+
+    textarea {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
   }
+}
+
+/* Force text color for form inputs to ensure readability */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  color: #1f2937 !important;
+  -webkit-text-fill-color: #1f2937;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important;
+  -webkit-text-fill-color: #9ca3af;
+  opacity: 1;
 }
 
 html {

@@ -21,14 +21,11 @@ import AboutPage from './components/AboutPage';
 import ContactPage from './components/ContactPage';
 import SearchResultsPage from './components/SearchResultsPage';
 import { Review } from './components/ReviewSection';
+import { checkAuth, logout as apiLogout } from './api/authService';
+import type { User } from './api/types';
 
-export interface User {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  countryCode?: string;
-}
+// Ré-exporter le type User pour les composants qui l'importent depuis App.tsx
+export type { User } from './api/types';
 
 type PageType = 'home' | 'destination' | 'activities' | 'profile' | 'write-review' | 'share-tip' | 'publish-photos' | 'add-place' | 'details' | 'about' | 'contact' | 'search';
 
@@ -41,18 +38,46 @@ export default function App() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [selectedDetailsItem, setSelectedDetailsItem] = useState<DetailsItem | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  // Charger l'utilisateur depuis localStorage au démarrage
+  // Vérifier l'authentification au démarrage (via cookie HttpOnly)
   useEffect(() => {
-    const savedUser = localStorage.getItem('camertrip_user');
-    if (savedUser) {
+    const initAuth = async () => {
       try {
-        setCurrentUser(JSON.parse(savedUser));
+        // D'abord essayer de récupérer l'utilisateur depuis le serveur
+        const user = await checkAuth();
+        if (user) {
+          setCurrentUser(user);
+          localStorage.setItem('camertrip_user', JSON.stringify(user));
+        } else {
+          // Si pas authentifié côté serveur, vérifier le localStorage comme fallback
+          const savedUser = localStorage.getItem('camertrip_user');
+          if (savedUser) {
+            try {
+              setCurrentUser(JSON.parse(savedUser));
+            } catch (error) {
+              console.error('Erreur lors du chargement de l\'utilisateur', error);
+              localStorage.removeItem('camertrip_user');
+            }
+          }
+        }
       } catch (error) {
-        console.error('Erreur lors du chargement de l\'utilisateur', error);
-        localStorage.removeItem('camertrip_user');
+        console.error('Erreur lors de la vérification de l\'authentification', error);
+        // Fallback sur localStorage
+        const savedUser = localStorage.getItem('camertrip_user');
+        if (savedUser) {
+          try {
+            setCurrentUser(JSON.parse(savedUser));
+          } catch (e) {
+            localStorage.removeItem('camertrip_user');
+          }
+        }
+      } finally {
+        setIsCheckingAuth(false);
       }
-    }
+    };
+
+    initAuth();
 
     // Charger les avis depuis localStorage
     const savedReviews = localStorage.getItem('camertrip_reviews');
@@ -64,6 +89,15 @@ export default function App() {
         localStorage.removeItem('camertrip_reviews');
       }
     }
+
+    // Écouter l'événement de déconnexion automatique
+    const handleAutoLogout = () => {
+      setCurrentUser(null);
+      localStorage.removeItem('camertrip_user');
+      setCurrentPage('home');
+    };
+    window.addEventListener('auth:logout', handleAutoLogout);
+    return () => window.removeEventListener('auth:logout', handleAutoLogout);
   }, []);
 
   const handleLogin = (user: User) => {
@@ -72,7 +106,12 @@ export default function App() {
     localStorage.setItem('camertrip_user', JSON.stringify(user));
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await apiLogout();
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion', error);
+    }
     setCurrentUser(null);
     setCurrentPage('home');
     // Supprimer de localStorage
@@ -120,7 +159,7 @@ export default function App() {
       placeId,
       placeName,
       userId: currentUser.email,
-      userName: `${currentUser.firstName} ${currentUser.lastName}`,
+      userName: currentUser.nomComplet,
       rating,
       comment,
       date: new Date().toISOString(),
@@ -142,7 +181,7 @@ export default function App() {
       placeId,
       placeName,
       userId: currentUser.email,
-      userName: `${currentUser.firstName} ${currentUser.lastName}`,
+      userName: currentUser.nomComplet,
       rating,
       comment,
       date: new Date().toISOString(),
@@ -170,7 +209,7 @@ export default function App() {
       category: tipCategory,
       content: tipContent,
       userId: currentUser.email,
-      userName: `${currentUser.firstName} ${currentUser.lastName}`,
+      userName: currentUser.nomComplet,
       date: new Date().toISOString(),
       helpful: 0
     };
@@ -191,7 +230,7 @@ export default function App() {
       placeType,
       photos,
       userId: currentUser.email,
-      userName: `${currentUser.firstName} ${currentUser.lastName}`,
+      userName: currentUser.nomComplet,
       date: new Date().toISOString()
     };
     

@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, MapPin, Star, Clock, Calendar, Users, Phone, 
-  Mail, Globe, Share2, Heart, MessageCircle 
+  Mail, Globe, Share2, Heart, MessageCircle, Loader2 
 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import BookingModal from './BookingModal';
 import AddReviewModal from './AddReviewModal';
 import ReviewSection, { Review } from './ReviewSection';
-import { User } from '../App';
+import type { User } from '../api/types';
+import { getEtablissementById } from '../api/etablissementService';
+import { getAvisByEtablissement } from '../api/avisService';
 
 export interface DetailsItem {
-  id: number;
+  id: string | number;
   name: string;
   category: 'hotels' | 'restaurants' | 'activities' | 'popular' | 'events';
   image: string;

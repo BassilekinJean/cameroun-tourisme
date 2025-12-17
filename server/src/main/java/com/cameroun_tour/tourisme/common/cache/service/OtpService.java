@@ -40,6 +40,32 @@ public class OtpService implements OtpServiceApi {
     }
 
     @Override
+    public void validateOtp(@NonNull String email, @NonNull String otp) {
+        String storedOtp = getOtp(email);
+        
+        // Vérifier si le code OTP existe
+        if (storedOtp == null) {
+            throw new OtpExpiredException("Le code de vérification a expiré ou n'existe pas. Veuillez demander un nouveau code.");
+        }
+        
+        // Vérifier l'expiration
+        Long expiration = redisTemplate.getExpire(email, TimeUnit.MILLISECONDS);
+        if (expiration == null || expiration <= 0) {
+            deleteOtp(email); // Nettoyer le code expiré
+            throw new OtpExpiredException("Le code de vérification a expiré. Veuillez demander un nouveau code.");
+        }
+        
+        // Vérifier si le code est correct
+        if (!storedOtp.equals(otp)) {
+            throw new OtpInvalidException("Le code de vérification est incorrect. Veuillez vérifier et réessayer.");
+        }
+        
+        // Code valide, on le supprime pour éviter sa réutilisation
+        deleteOtp(email);
+    }
+
+    @Override
+    @Deprecated
     public boolean isOtpValid(@NonNull String email, @NonNull String otp) {
         String storedOtp = getOtp(email);
         long expiration = redisTemplate.getExpire(email, TimeUnit.MILLISECONDS);
@@ -52,6 +78,4 @@ public class OtpService implements OtpServiceApi {
         }
         return false;
     }
-
-
 }

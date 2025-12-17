@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cameroun_tour.tourisme.common.auth.JWTutils;
+import com.cameroun_tour.tourisme.common.cache.OtpServiceApi;
+import com.cameroun_tour.tourisme.common.email.EmailServiceApi;
 import com.cameroun_tour.tourisme.common.utils.enums.Role;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.api.UtilisateurRepository;
@@ -25,6 +27,7 @@ import com.cameroun_tour.tourisme.voyageur.errors.AccountLockedException;
 import com.cameroun_tour.tourisme.voyageur.errors.EmailAlreadyExistsException;
 import com.cameroun_tour.tourisme.voyageur.errors.UserNotFoundException;
 import com.cameroun_tour.tourisme.voyageur.errors.VoyageurBadCredentialsException;
+import com.cameroun_tour.tourisme.voyageur.model.ResetPasswordDto;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurLoginDto;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurRegistrationDto;
@@ -41,6 +44,8 @@ public class AuthServiceImpl implements AuthentificationService {
     private final PasswordEncoder passwordEncoder;
     private final JWTutils jwtService;
     private final @Lazy AuthenticationManager authenticationManager;
+    private final EmailServiceApi emailService;
+    private final OtpServiceApi otpService;
     
     private final RedisTemplate<String, Object> redisTemplate;
 
@@ -249,5 +254,49 @@ public class AuthServiceImpl implements AuthentificationService {
             user.getPhotoProfile(),
             user.getFavorisIds() // Directement les UUIDs, plus de mapping nécessaire
         );
+    }
+
+    // --- Méthodes OTP ---
+    
+    @Override
+    public void sendOtpForEmail(String email) {
+        // Envoyer le code OTP par email
+        emailService.sendOtp(email);
+    }
+    
+    @Override
+    @SuppressWarnings("null")
+    public void verifyOtp(String email, String otp) {
+        // Valide le code OTP - lève OtpExpiredException ou OtpInvalidException si erreur
+        otpService.validateOtp(email, otp);
+    }
+    
+    @Override
+    @Transactional
+    @SuppressWarnings("null")
+    public void resetPassword(ResetPasswordDto request) {
+        // 1. Vérifier que les mots de passe correspondent
+        if (!request.newPassword().equals(request.confirmPassword())) {
+            throw new IllegalArgumentException("Les mots de passe ne correspondent pas");
+        }
+        
+        // 2. Valider le code OTP - lève une exception si invalide ou expiré
+        otpService.validateOtp(request.email(), request.otp());
+        
+        // 3. Trouver l'utilisateur
+        UtilisateurEntity user = userRepository.findByUserEmail(request.email())
+                .orElseThrow(() -> new UserNotFoundException("Aucun compte associé à cet email"));
+        
+        // 4. Mettre à jour le mot de passe
+        user.setUserPassword(passwordEncoder.encode(request.newPassword()));
+        
+        // 5. Réinitialiser les tentatives de connexion échouées si le compte était verrouillé
+        if (user.isAccountLocked()) {
+            user.setAccountLocked(false);
+            user.setLockTime(null);
+            user.setFailedAttempt(0);
+        }
+        
+        userRepository.save(user);
     }
 }

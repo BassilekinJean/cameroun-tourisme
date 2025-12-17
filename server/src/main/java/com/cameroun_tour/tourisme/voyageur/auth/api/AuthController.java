@@ -3,11 +3,17 @@ package com.cameroun_tour.tourisme.voyageur.auth.api;
 
 import com.cameroun_tour.tourisme.common.auth.CookieUtil;
 import com.cameroun_tour.tourisme.voyageur.auth.AuthentificationService;
+import com.cameroun_tour.tourisme.voyageur.model.OtpRequestDto;
+import com.cameroun_tour.tourisme.voyageur.model.OtpVerificationDto;
+import com.cameroun_tour.tourisme.voyageur.model.ResetPasswordDto;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurLoginDto; 
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurDto;
 import com.cameroun_tour.tourisme.voyageur.model.UtilisateurRegistrationDto;
 
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -90,6 +97,65 @@ public class AuthController {
         cookieUtil.clear(response, refreshTokenCookieName, "/api/auth/refresh"); // path spécifique
         
         return ResponseEntity.ok("Déconnecté");
+    }
+
+    // --- Endpoints OTP ---
+
+    @PostMapping("/send-otp")
+    @RateLimiter(name = "otpRateLimiter")
+    @Operation(summary = "Envoyer un code OTP", description = "Envoie un code de vérification à 6 chiffres par email")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Code OTP envoyé avec succès"),
+        @ApiResponse(responseCode = "429", description = "Trop de demandes - veuillez patienter")
+    })
+    public ResponseEntity<Map<String, String>> sendOtp(@Valid @RequestBody OtpRequestDto request) {
+        authService.sendOtpForEmail(request.email());
+        return ResponseEntity.ok(Map.of(
+            "message", "Un code de vérification a été envoyé à votre adresse email",
+            "email", request.email()
+        ));
+    }
+
+    @PostMapping("/verify-otp")
+    @RateLimiter(name = "otpRateLimiter")
+    @Operation(summary = "Vérifier un code OTP", description = "Vérifie si le code OTP est valide")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Code OTP valide"),
+        @ApiResponse(responseCode = "400", description = "Code OTP incorrect"),
+        @ApiResponse(responseCode = "410", description = "Code OTP expiré")
+    })
+    public ResponseEntity<Map<String, String>> verifyOtp(@Valid @RequestBody OtpVerificationDto request) {
+        authService.verifyOtp(request.email(), request.otp());
+        return ResponseEntity.ok(Map.of("message", "Code de vérification valide"));
+    }
+
+    @PostMapping("/forgot-password")
+    @RateLimiter(name = "otpRateLimiter")
+    @Operation(summary = "Mot de passe oublié", description = "Envoie un code OTP pour réinitialiser le mot de passe")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Code OTP envoyé si l'email existe"),
+        @ApiResponse(responseCode = "429", description = "Trop de demandes - veuillez patienter")
+    })
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody OtpRequestDto request) {
+        // On envoie toujours la même réponse pour ne pas révéler si l'email existe
+        authService.sendOtpForEmail(request.email());
+        return ResponseEntity.ok(Map.of(
+            "message", "Si un compte existe avec cet email, un code de vérification sera envoyé"
+        ));
+    }
+
+    @PostMapping("/reset-password")
+    @RateLimiter(name = "otpRateLimiter")
+    @Operation(summary = "Réinitialiser le mot de passe", description = "Réinitialise le mot de passe avec un code OTP valide")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Mot de passe réinitialisé avec succès"),
+        @ApiResponse(responseCode = "400", description = "Code OTP incorrect ou mots de passe non correspondants"),
+        @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé"),
+        @ApiResponse(responseCode = "410", description = "Code OTP expiré")
+    })
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordDto request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(Map.of("message", "Votre mot de passe a été réinitialisé avec succès"));
     }
 
     // Helper pour ajouter les cookies
