@@ -65,12 +65,15 @@ export interface UserLoginData {
 }
 
 /**
- * Pour la mise à jour du profil
+ * Pour la mise à jour du profil - correspond à UtilisateurDto du backend
  */
 export interface UserUpdateData {
-  nomComplet?: string;
-  paysOrigine?: string;
+  publicId?: string;
+  nomComplet: string;
+  email: string;
+  paysOrigine: string;
   photoProfile?: string;
+  favorisIds?: string[];
 }
 
 // ==================== ETABLISSEMENT ====================

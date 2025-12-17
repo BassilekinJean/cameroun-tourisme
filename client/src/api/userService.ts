@@ -6,14 +6,14 @@
 import apiClient, { getErrorMessage } from './config';
 import type { User, UserUpdateData, ApiResponse, PageResponse } from './types';
 
-const VOYAGEURS_BASE = '/voyageurs';
+const USER_BASE = '/user';
 
 /**
  * Récupérer le profil de l'utilisateur connecté
  */
 export const getMyProfile = async (): Promise<ApiResponse<User>> => {
   try {
-    const response = await apiClient.get<User>(`${VOYAGEURS_BASE}/me`);
+    const response = await apiClient.get<User>(`${USER_BASE}/me`);
     return {
       success: true,
       data: response.data,
@@ -31,7 +31,7 @@ export const getMyProfile = async (): Promise<ApiResponse<User>> => {
  */
 export const getUserProfile = async (publicId: string): Promise<ApiResponse<User>> => {
   try {
-    const response = await apiClient.get<User>(`${VOYAGEURS_BASE}/${publicId}`);
+    const response = await apiClient.get<User>(`${USER_BASE}/${publicId}`);
     return {
       success: true,
       data: response.data,
@@ -49,7 +49,7 @@ export const getUserProfile = async (publicId: string): Promise<ApiResponse<User
  */
 export const updateProfile = async (data: UserUpdateData): Promise<ApiResponse<User>> => {
   try {
-    const response = await apiClient.put<User>(`${VOYAGEURS_BASE}/update`, data);
+    const response = await apiClient.put<User>(`${USER_BASE}/update`, data);
     return {
       success: true,
       data: response.data,
@@ -68,7 +68,7 @@ export const updateProfile = async (data: UserUpdateData): Promise<ApiResponse<U
  */
 export const toggleFavori = async (etablissementId: string): Promise<ApiResponse<void>> => {
   try {
-    await apiClient.patch(`${VOYAGEURS_BASE}/toggle-favori/${etablissementId}`);
+    await apiClient.patch(`${USER_BASE}/addFavoris/${etablissementId}`);
     return {
       success: true,
       message: 'Favoris mis à jour',
@@ -91,8 +91,8 @@ export const getAllUsers = async (
   direction: 'asc' | 'desc' = 'desc'
 ): Promise<ApiResponse<PageResponse<User>>> => {
   try {
-    const response = await apiClient.get<PageResponse<User>>(`${VOYAGEURS_BASE}/all`, {
-      params: { page, size, sortBy, direction },
+    const response = await apiClient.get<PageResponse<User>>(`${USER_BASE}/all`, {
+      params: { page, size, sort: sortBy, sortDir: direction },
     });
     return {
       success: true,

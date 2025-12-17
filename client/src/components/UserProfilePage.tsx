@@ -77,8 +77,12 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome }: Us
     try {
       // Appeler l'API pour mettre à jour le profil
       const response = await updateProfile({
+        publicId: user.id,
         nomComplet: formData.nomComplet,
+        email: formData.email,
         paysOrigine: formData.paysOrigine,
+        photoProfile: user.photoProfile,
+        favorisIds: user.favorisIds,
       });
 
       if (response.success && response.data) {
