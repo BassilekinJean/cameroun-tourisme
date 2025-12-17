@@ -17,7 +17,7 @@ interface ReviewSectionProps {
   placeId: string;
   placeName: string;
   reviews: Review[];
-  currentUser: { firstName: string; lastName: string; email: string } | null;
+  currentUser: { nomComplet: string; email: string } | null;
   onAddReview: () => void;
 }
 

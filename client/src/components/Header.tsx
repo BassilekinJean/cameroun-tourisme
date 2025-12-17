@@ -56,8 +56,12 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
   };
 
   const getUserInitials = () => {
-    if (!currentUser) return '';
-    return `${currentUser.firstName.charAt(0)}${currentUser.lastName.charAt(0)}`.toUpperCase();
+    if (!currentUser || !currentUser.nomComplet) return '';
+    const parts = currentUser.nomComplet.trim().split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
+    }
+    return currentUser.nomComplet.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -311,7 +315,7 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
                     <div className="absolute right-0 mt-2 w-64 bg-white shadow-lg rounded-lg py-2 border border-gray-200">
                       <div className="px-4 py-3 border-b border-gray-200">
                         <p className="text-sm text-gray-900">
-                          {currentUser.firstName} {currentUser.lastName}
+                          {currentUser.nomComplet}
                         </p>
                         <p className="text-xs text-gray-600">{currentUser.email}</p>
                       </div>
@@ -592,7 +596,7 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
                     <div className="space-y-2">
                       <div className="px-4 py-2 bg-green-50 rounded-lg">
                         <p className="text-sm text-gray-900">
-                          {currentUser.firstName} {currentUser.lastName}
+                          {currentUser.nomComplet}
                         </p>
                         <p className="text-xs text-gray-600">{currentUser.email}</p>
                       </div>

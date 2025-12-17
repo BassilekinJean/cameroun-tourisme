@@ -4,20 +4,35 @@
  */
 
 import apiClient, { getErrorMessage } from './config';
-import type { User, UserRegistrationData, UserLoginData, AuthResponse } from './types';
+import type { User, UserRegistrationData, UserLoginData, AuthResponse, UtilisateurDto } from './types';
 
 // Le backend utilise /api/auth pour l'authentification
 const AUTH_BASE = '/auth';
+
+/**
+ * Transforme UtilisateurDto (backend) en User (frontend)
+ */
+const transformUserResponse = (dto: UtilisateurDto): User => {
+  return {
+    id: dto.publicId,
+    nomComplet: dto.nomComplet,
+    email: dto.email,
+    paysOrigine: dto.paysOrigine,
+    photoProfile: dto.photoProfile,
+    favorisIds: dto.favorisIds || [],
+  };
+};
 
 /**
  * Inscription d'un nouvel utilisateur
  */
 export const register = async (data: UserRegistrationData): Promise<AuthResponse> => {
   try {
-    const response = await apiClient.post<User>(`${AUTH_BASE}/register`, data);
+    const response = await apiClient.post<UtilisateurDto>(`${AUTH_BASE}/register`, data);
+    const user = transformUserResponse(response.data);
     return {
       success: true,
-      user: response.data,
+      user,
       message: 'Inscription réussie',
     };
   } catch (error) {
@@ -33,10 +48,11 @@ export const register = async (data: UserRegistrationData): Promise<AuthResponse
  */
 export const login = async (data: UserLoginData): Promise<AuthResponse> => {
   try {
-    const response = await apiClient.post<User>(`${AUTH_BASE}/login`, data);
+    const response = await apiClient.post<UtilisateurDto>(`${AUTH_BASE}/login`, data);
+    const user = transformUserResponse(response.data);
     return {
       success: true,
-      user: response.data,
+      user,
       message: 'Connexion réussie',
     };
   } catch (error) {
@@ -83,7 +99,7 @@ export const refreshToken = async (): Promise<boolean> => {
  */
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
-    const response = await apiClient.get<User>('/voyageurs/me');
+    const response = await apiClient.get<User>('/user/me');
     return response.data;
   } catch (error) {
     return null;
