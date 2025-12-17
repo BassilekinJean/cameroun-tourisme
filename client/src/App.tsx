@@ -247,7 +247,7 @@ export default function App() {
       ...placeData,
       id: Date.now().toString(),
       submittedBy: currentUser.email,
-      submitterName: `${currentUser.firstName} ${currentUser.lastName}`,
+      submitterName: currentUser.nomComplet,
       submittedDate: new Date().toISOString(),
       status: 'pending' // En attente de validation
     };
