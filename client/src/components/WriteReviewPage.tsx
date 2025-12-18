@@ -45,9 +45,9 @@ export default function WriteReviewPage({ onBackToHome, currentUser, onSubmitRev
     const searchPlaces = async () => {
       if (placeName.length >= 2) {
         try {
-          const response = await searchEtablissements(placeName, 0, 10);
+          const response = await searchEtablissements({ query: placeName, page: 0, size: 10 });
           if (response.success && response.data) {
-            setSuggestions(response.data.content.filter(e => e.categorie === placeType));
+            setSuggestions(response.data.etablissements.filter(e => e.categorie === placeType));
           }
         } catch (err) {
           // Ignorer les erreurs de recherche
