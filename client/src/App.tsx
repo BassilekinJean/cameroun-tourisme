@@ -20,17 +20,16 @@ import DetailsPage, { DetailsItem } from './components/DetailsPage';
 import AboutPage from './components/AboutPage';
 import ContactPage from './components/ContactPage';
 import SearchResultsPage from './components/SearchResultsPage';
+import AdminDashboard from './components/AdminDashboard';
+import EtablissementPanel from './components/EtablissementPanel';
 import { Review } from './components/ReviewSection';
+import { checkAuth, logout as apiLogout } from './api/authService';
+import type { User, Role } from './api/types';
 
-export interface User {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  countryCode?: string;
-}
+// Ré-exporter le type User pour les composants qui l'importent depuis App.tsx
+export type { User } from './api/types';
 
-type PageType = 'home' | 'destination' | 'activities' | 'profile' | 'write-review' | 'share-tip' | 'publish-photos' | 'add-place' | 'details' | 'about' | 'contact' | 'search';
+type PageType = 'home' | 'destination' | 'activities' | 'profile' | 'write-review' | 'share-tip' | 'publish-photos' | 'add-place' | 'details' | 'about' | 'contact' | 'search' | 'admin' | 'etablissement-panel';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -42,17 +41,57 @@ export default function App() {
   const [selectedDetailsItem, setSelectedDetailsItem] = useState<DetailsItem | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Charger l'utilisateur depuis localStorage au démarrage
+  // Vérifier l'authentification au démarrage (via cookie HttpOnly)
   useEffect(() => {
-    const savedUser = localStorage.getItem('camertrip_user');
-    if (savedUser) {
+    const initAuth = async () => {
       try {
-        setCurrentUser(JSON.parse(savedUser));
+        // Gérer le callback OAuth2 si on est sur /auth/callback
+        const currentPath = window.location.pathname;
+        if (currentPath === '/auth/callback') {
+          // Après OAuth2, les cookies HttpOnly sont déjà définis par le backend
+          // On récupère l'utilisateur et on nettoie l'URL
+          const user = await checkAuth();
+          if (user) {
+            setCurrentUser(user);
+            localStorage.setItem('camertrip_user', JSON.stringify(user));
+          }
+          // Nettoyer l'URL pour revenir à la racine
+          window.history.replaceState({}, document.title, '/');
+          return;
+        }
+
+        // D'abord essayer de récupérer l'utilisateur depuis le serveur
+        const user = await checkAuth();
+        if (user) {
+          setCurrentUser(user);
+          localStorage.setItem('camertrip_user', JSON.stringify(user));
+        } else {
+          // Si pas authentifié côté serveur, vérifier le localStorage comme fallback
+          const savedUser = localStorage.getItem('camertrip_user');
+          if (savedUser) {
+            try {
+              setCurrentUser(JSON.parse(savedUser));
+            } catch (error) {
+              console.error('Erreur lors du chargement de l\'utilisateur', error);
+              localStorage.removeItem('camertrip_user');
+            }
+          }
+        }
       } catch (error) {
-        console.error('Erreur lors du chargement de l\'utilisateur', error);
-        localStorage.removeItem('camertrip_user');
+        console.error('Erreur lors de la vérification de l\'authentification', error);
+        // Fallback sur localStorage
+        const savedUser = localStorage.getItem('camertrip_user');
+        if (savedUser) {
+          try {
+            setCurrentUser(JSON.parse(savedUser));
+          } catch (e) {
+            localStorage.removeItem('camertrip_user');
+          }
+        }
       }
-    }
+    };
+
+    initAuth();
 
     // Charger les avis depuis localStorage
     const savedReviews = localStorage.getItem('camertrip_reviews');
@@ -64,6 +103,15 @@ export default function App() {
         localStorage.removeItem('camertrip_reviews');
       }
     }
+
+    // Écouter l'événement de déconnexion automatique
+    const handleAutoLogout = () => {
+      setCurrentUser(null);
+      localStorage.removeItem('camertrip_user');
+      setCurrentPage('home');
+    };
+    window.addEventListener('auth:logout', handleAutoLogout);
+    return () => window.removeEventListener('auth:logout', handleAutoLogout);
   }, []);
 
   const handleLogin = (user: User) => {
@@ -72,7 +120,12 @@ export default function App() {
     localStorage.setItem('camertrip_user', JSON.stringify(user));
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await apiLogout();
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion', error);
+    }
     setCurrentUser(null);
     setCurrentPage('home');
     // Supprimer de localStorage
@@ -120,7 +173,7 @@ export default function App() {
       placeId,
       placeName,
       userId: currentUser.email,
-      userName: `${currentUser.firstName} ${currentUser.lastName}`,
+      userName: currentUser.nomComplet,
       rating,
       comment,
       date: new Date().toISOString(),
@@ -142,7 +195,7 @@ export default function App() {
       placeId,
       placeName,
       userId: currentUser.email,
-      userName: `${currentUser.firstName} ${currentUser.lastName}`,
+      userName: currentUser.nomComplet,
       rating,
       comment,
       date: new Date().toISOString(),
@@ -170,7 +223,7 @@ export default function App() {
       category: tipCategory,
       content: tipContent,
       userId: currentUser.email,
-      userName: `${currentUser.firstName} ${currentUser.lastName}`,
+      userName: currentUser.nomComplet,
       date: new Date().toISOString(),
       helpful: 0
     };
@@ -191,7 +244,7 @@ export default function App() {
       placeType,
       photos,
       userId: currentUser.email,
-      userName: `${currentUser.firstName} ${currentUser.lastName}`,
+      userName: currentUser.nomComplet,
       date: new Date().toISOString()
     };
     
@@ -208,7 +261,7 @@ export default function App() {
       ...placeData,
       id: Date.now().toString(),
       submittedBy: currentUser.email,
-      submitterName: `${currentUser.firstName} ${currentUser.lastName}`,
+      submitterName: currentUser.nomComplet,
       submittedDate: new Date().toISOString(),
       status: 'pending' // En attente de validation
     };
@@ -253,6 +306,38 @@ export default function App() {
     setCurrentPage('search');
   };
 
+  const handleGoToAdmin = () => {
+    if (currentUser?.role === 'ADMIN') {
+      setCurrentPage('admin');
+    }
+  };
+
+  const handleGoToEtablissementPanel = () => {
+    if (currentUser?.role === 'ETABLISSEMENT' || currentUser?.role === 'ADMIN') {
+      setCurrentPage('etablissement-panel');
+    }
+  };
+
+  // Si on est sur le panneau admin, ne pas afficher le header/footer standard
+  if (currentPage === 'admin' && currentUser?.role === 'ADMIN') {
+    return (
+      <AdminDashboard
+        currentUser={currentUser}
+        onBack={handleBackToHome}
+      />
+    );
+  }
+
+  // Si on est sur le panneau établissement
+  if (currentPage === 'etablissement-panel' && (currentUser?.role === 'ETABLISSEMENT' || currentUser?.role === 'ADMIN')) {
+    return (
+      <EtablissementPanel
+        currentUser={currentUser}
+        onBack={handleBackToHome}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen">
       <Header 
@@ -271,6 +356,8 @@ export default function App() {
         onContactPage={handleContactPage}
         currentPage={currentPage}
         onSearch={handleSearch}
+        onGoToAdmin={handleGoToAdmin}
+        onGoToEtablissementPanel={handleGoToEtablissementPanel}
       />
       
       {currentPage === 'home' && (
@@ -278,7 +365,7 @@ export default function App() {
           <Hero onSearch={handleSearch} />
           <FeaturedBanner onLearnMore={handleAboutPage} />
           <ActivitiesSection onCategoryClick={handleActivityCategoryClick} />
-          <DestinationsGrid />
+          <DestinationsGrid onShowDetails={handleDetailsPage} />
           <HotelsSection onShowDetails={handleDetailsPage} />
           <TravellersChoice />
           <Newsletter />

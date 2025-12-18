@@ -8,8 +8,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
-import com.cameroun_tour.tourisme.common.cache.api.OtpServiceApi;
-import com.cameroun_tour.tourisme.common.email.api.EmailServiceApi;
+import com.cameroun_tour.tourisme.common.cache.OtpServiceApi;
+import com.cameroun_tour.tourisme.common.email.EmailServiceApi;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -27,9 +27,15 @@ public class EmailServiceImpl implements EmailServiceApi {
         try {
             MimeMessage message = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message,true);
-            helper.setTo(destinataire);
-            helper.setSubject(subject);
-            helper.setText(body, true);
+            if (destinataire != null) {
+                helper.setTo(destinataire);
+            }
+            if (subject != null) {
+                helper.setSubject(subject);
+            }
+            if(body != null){
+                helper.setText(body, true);
+            } 
             javaMailSender.send(message);
         } catch (MessagingException e) {
             e.printStackTrace();
@@ -60,6 +66,13 @@ public class EmailServiceImpl implements EmailServiceApi {
 
         sendMessage(email, subject, emailContent);
 
-        otpService.saveOtp(email, otpCode);
+        if (otpCode != null && email != null) {
+            otpService.saveOtp(email, otpCode);
+        }
+    }
+
+    @Override
+    public boolean verifyOtp(String email, String otp) {
+        return ((EmailServiceApi) otpService).verifyOtp(email, otp);
     }
 }

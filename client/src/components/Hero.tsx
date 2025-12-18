@@ -66,7 +66,7 @@ export default function Hero({ onSearch }: HeroProps) {
   };
 
   return (
-    <div className="relative h-[600px] overflow-hidden">
+    <div className="relative h-[400px] sm:h-[500px] md:h-[550px] lg:h-[600px] overflow-hidden">
       {/* Carousel Background */}
       <div className="relative h-full">
         {carouselImages.map((image, index) => (
@@ -89,27 +89,27 @@ export default function Hero({ onSearch }: HeroProps) {
       {/* Navigation Arrows */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/50 text-white p-2 rounded-full backdrop-blur-sm transition z-10"
+        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/50 text-white p-1.5 sm:p-2 rounded-full backdrop-blur-sm transition z-10"
         aria-label="Previous slide"
       >
-        <ChevronLeft className="w-6 h-6" />
+        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
       <button
         onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/50 text-white p-2 rounded-full backdrop-blur-sm transition z-10"
+        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/50 text-white p-1.5 sm:p-2 rounded-full backdrop-blur-sm transition z-10"
         aria-label="Next slide"
       >
-        <ChevronRight className="w-6 h-6" />
+        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
 
       {/* Dots Indicator */}
-      <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+      <div className="absolute bottom-16 sm:bottom-20 md:bottom-24 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2 z-10">
         {carouselImages.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={`w-2 h-2 rounded-full transition-all ${
-              index === currentSlide ? 'bg-white w-8' : 'bg-white/50'
+            className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all ${
+              index === currentSlide ? 'bg-white w-6 sm:w-8' : 'bg-white/50'
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />
@@ -117,32 +117,32 @@ export default function Hero({ onSearch }: HeroProps) {
       </div>
 
       {/* Search Bar Overlay */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-white text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-4">
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-3 sm:px-4">
+        <div className="text-center mb-4 sm:mb-6 md:mb-8">
+          <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl mb-2 sm:mb-4 font-bold">
             Découvrez le Cameroun
           </h1>
-          <p className="text-white text-base sm:text-lg md:text-xl lg:text-2xl">
+          <p className="text-white text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl">
             L'Afrique en miniature vous attend
           </p>
         </div>
 
         {/* Search Bar */}
-        <form onSubmit={handleSearch} className="w-full max-w-3xl px-4">
+        <form onSubmit={handleSearch} className="w-full max-w-3xl px-2 sm:px-4">
           <div className="bg-white rounded-full shadow-2xl flex flex-col sm:flex-row items-center overflow-hidden">
-            <div className="flex items-center flex-1 w-full pl-4 sm:pl-6">
-              <Search className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 mr-2 sm:mr-3 flex-shrink-0" />
+            <div className="flex items-center flex-1 w-full pl-3 sm:pl-4 md:pl-6">
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-gray-400 mr-2 sm:mr-3 flex-shrink-0" />
               <input
                 type="text"
-                placeholder="Rechercher une destination, activité, hôtel..."
+                placeholder="Rechercher une destination, activité..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 py-4 sm:py-5 outline-none text-gray-700 placeholder-gray-400 text-sm sm:text-base"
+                className="flex-1 py-3 sm:py-4 md:py-5 outline-none text-gray-700 placeholder-gray-400 text-xs sm:text-sm md:text-base"
               />
             </div>
             <button
               type="submit"
-              className="bg-green-700 text-white px-8 sm:px-10 py-4 sm:py-5 hover:bg-green-800 transition w-full sm:w-auto"
+              className="bg-green-700 text-white px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 hover:bg-green-800 transition w-full sm:w-auto text-sm sm:text-base"
             >
               Rechercher
             </button>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, ChevronDown, LogOut, User as UserIcon } from 'lucide-react';
+import { Menu, X, ChevronDown, LogOut, User as UserIcon, Shield, Building2 } from 'lucide-react';
 import AuthModal from './AuthModal';
 import { User } from '../App';
 
@@ -18,10 +18,12 @@ interface HeaderProps {
   onAboutPage?: () => void;
   onContactPage?: () => void;
   onSearch?: (query: string) => void;
-  currentPage: 'home' | 'destination' | 'activities' | 'profile' | 'write-review' | 'share-tip' | 'publish-photos' | 'add-place' | 'details' | 'about' | 'contact' | 'search';
+  onGoToAdmin?: () => void;
+  onGoToEtablissementPanel?: () => void;
+  currentPage: 'home' | 'destination' | 'activities' | 'profile' | 'write-review' | 'share-tip' | 'publish-photos' | 'add-place' | 'details' | 'about' | 'contact' | 'search' | 'admin' | 'etablissement-panel';
 }
 
-export default function Header({ currentUser, onLogout, onLogin, onDestinationSelect, onDiscoverActivities, onAddActivity, onGoToProfile, onWriteReview, onShareTip, onPublishPhotos, onAddPlace, onAboutPage, onContactPage, onSearch, currentPage }: HeaderProps) {
+export default function Header({ currentUser, onLogout, onLogin, onDestinationSelect, onDiscoverActivities, onAddActivity, onGoToProfile, onWriteReview, onShareTip, onPublishPhotos, onAddPlace, onAboutPage, onContactPage, onSearch, onGoToAdmin, onGoToEtablissementPanel, currentPage }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -34,12 +36,14 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
   const getActivePage = () => {
     if (currentPage === 'home') return 'Accueil';
     if (currentPage === 'destination') return 'Destinations';
-    if (currentPage === 'activities') return 'Activités';
+    if (currentPage === 'activities') return 'Découverte';
     if (currentPage === 'profile') return 'Profil';
     if (currentPage === 'write-review' || currentPage === 'share-tip' || currentPage === 'publish-photos' || currentPage === 'add-place') return 'Avis';
     if (currentPage === 'about') return 'À propos';
     if (currentPage === 'contact') return 'Contact';
     if (currentPage === 'search') return 'Recherche';
+    if (currentPage === 'admin') return 'Administration';
+    if (currentPage === 'etablissement-panel') return 'Mon établissement';
     return 'Accueil';
   };
 
@@ -56,8 +60,12 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
   };
 
   const getUserInitials = () => {
-    if (!currentUser) return '';
-    return `${currentUser.firstName.charAt(0)}${currentUser.lastName.charAt(0)}`.toUpperCase();
+    if (!currentUser || !currentUser.nomComplet) return '';
+    const parts = currentUser.nomComplet.trim().split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
+    }
+    return currentUser.nomComplet.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -69,15 +77,15 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
             <div className="flex items-center">
               <button 
                 onClick={() => window.location.reload()}
-                className="flex items-center gap-2 text-green-800 cursor-pointer hover:opacity-80 transition"
+                className="flex items-center gap-1.5 sm:gap-2 text-green-800 cursor-pointer hover:opacity-80 transition"
               >
-                <span className="text-4xl">🌍</span>
-                <span className="text-3xl">CamerTrip</span>
+                <span className="text-2xl sm:text-3xl lg:text-4xl">🌍</span>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-semibold">CamerTrip</span>
               </button>
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-8">
+            <nav className="hidden md:flex items-center space-x-4 lg:space-x-8">
               <a 
                 href="#" 
                 onClick={(e) => {
@@ -179,12 +187,12 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
               >
                 <button 
                   className={`flex items-center transition duration-300 relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:transition-all after:duration-300 pb-1 ${
-                    activePage === 'Activités' 
+                    activePage === 'Découverte' 
                       ? 'text-green-700 after:w-full after:bg-green-700' 
                       : 'text-gray-700 hover:text-green-700 after:w-0 after:bg-green-700 hover:after:w-full'
                   }`}
                 >
-                  Activités
+                  Découverte
                   <ChevronDown className="ml-1 w-4 h-4" />
                 </button>
                 <div className={`absolute w-56 bg-white shadow-lg rounded-lg py-2 mt-1 transition-all duration-200 ${
@@ -197,7 +205,7 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
                     }}
                     className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700 transition duration-200"
                   >
-                    Découvrir une activité
+                    🌍 Explorer le Cameroun
                   </button>
                   <button 
                     onClick={() => {
@@ -206,7 +214,7 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
                     }}
                     className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700 transition duration-200"
                   >
-                    Ajouter une activité
+                    ✨ Proposer une découverte
                   </button>
                 </div>
               </div>
@@ -311,9 +319,20 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
                     <div className="absolute right-0 mt-2 w-64 bg-white shadow-lg rounded-lg py-2 border border-gray-200">
                       <div className="px-4 py-3 border-b border-gray-200">
                         <p className="text-sm text-gray-900">
-                          {currentUser.firstName} {currentUser.lastName}
+                          {currentUser.nomComplet}
                         </p>
                         <p className="text-xs text-gray-600">{currentUser.email}</p>
+                        {currentUser.role && (
+                          <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full ${
+                            currentUser.role === 'ADMIN' 
+                              ? 'bg-red-100 text-red-700' 
+                              : currentUser.role === 'ETABLISSEMENT'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {currentUser.role === 'ADMIN' ? 'Administrateur' : currentUser.role === 'ETABLISSEMENT' ? 'Établissement' : 'Utilisateur'}
+                          </span>
+                        )}
                       </div>
                       <button
                         onClick={() => {
@@ -325,6 +344,35 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
                         <UserIcon className="w-4 h-4" />
                         Mon profil
                       </button>
+                      
+                      {/* Bouton Administration pour les ADMIN */}
+                      {currentUser.role === 'ADMIN' && onGoToAdmin && (
+                        <button
+                          onClick={() => {
+                            onGoToAdmin();
+                            setShowUserMenu(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition duration-200 flex items-center gap-2"
+                        >
+                          <Shield className="w-4 h-4" />
+                          Administration
+                        </button>
+                      )}
+                      
+                      {/* Bouton Mon établissement pour les ETABLISSEMENT */}
+                      {currentUser.role === 'ETABLISSEMENT' && onGoToEtablissementPanel && (
+                        <button
+                          onClick={() => {
+                            onGoToEtablissementPanel();
+                            setShowUserMenu(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition duration-200 flex items-center gap-2"
+                        >
+                          <Building2 className="w-4 h-4" />
+                          Mon établissement
+                        </button>
+                      )}
+                      
                       <button
                         onClick={() => {
                           onLogout();
@@ -359,8 +407,8 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
 
           {/* Mobile Menu */}
           {isMenuOpen && (
-            <div className="md:hidden py-4 border-t">
-              <nav className="flex flex-col space-y-4">
+            <div className="md:hidden py-3 border-t max-h-[calc(100vh-4rem)] overflow-y-auto">
+              <nav className="flex flex-col space-y-3">
                 <button 
                   onClick={() => {
                     setIsMenuOpen(false);
@@ -483,11 +531,11 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
                 </div>
                 <div>
                   <p className={`transition mb-2 ${
-                    activePage === 'Activités' 
+                    activePage === 'Découverte' 
                       ? 'text-green-700' 
                       : 'text-gray-700'
                   }`}>
-                    Activités
+                    Découverte
                   </p>
                   <div className="pl-4 space-y-2">
                     <button 
@@ -497,7 +545,7 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
                       }}
                       className="block text-sm text-gray-600 hover:text-green-700 transition"
                     >
-                      Découvrir une activité
+                      Explorer le Cameroun
                     </button>
                     <button 
                       onClick={() => {
@@ -506,7 +554,7 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
                       }}
                       className="block text-sm text-gray-600 hover:text-green-700 transition"
                     >
-                      Ajouter une activité
+                      Proposer une découverte
                     </button>
                   </div>
                 </div>
@@ -587,31 +635,71 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
                 >
                   Contact
                 </a>
-                <div className="pt-4 space-y-2">
+                <div className="pt-3 space-y-2">
                   {currentUser ? (
                     <div className="space-y-2">
-                      <div className="px-4 py-2 bg-green-50 rounded-lg">
+                      <div className="px-3 py-2 bg-green-50 rounded-lg">
                         <p className="text-sm text-gray-900">
-                          {currentUser.firstName} {currentUser.lastName}
+                          {currentUser.nomComplet}
                         </p>
                         <p className="text-xs text-gray-600">{currentUser.email}</p>
+                        {currentUser.role && (
+                          <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full ${
+                            currentUser.role === 'ADMIN' 
+                              ? 'bg-red-100 text-red-700' 
+                              : currentUser.role === 'ETABLISSEMENT'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {currentUser.role === 'ADMIN' ? 'Administrateur' : currentUser.role === 'ETABLISSEMENT' ? 'Établissement' : 'Utilisateur'}
+                          </span>
+                        )}
                       </div>
                       <button
                         onClick={() => {
                           onGoToProfile();
                           setIsMenuOpen(false);
                         }}
-                        className="w-full bg-green-600 text-white px-4 py-2 rounded-full hover:bg-green-700 transition flex items-center justify-center gap-2"
+                        className="w-full bg-green-600 text-white px-3 py-2 rounded-full text-sm hover:bg-green-700 transition flex items-center justify-center gap-2"
                       >
                         <UserIcon className="w-4 h-4" />
                         Mon profil
                       </button>
+                      
+                      {/* Bouton Administration pour les ADMIN (mobile) */}
+                      {currentUser.role === 'ADMIN' && onGoToAdmin && (
+                        <button
+                          onClick={() => {
+                            onGoToAdmin();
+                            setIsMenuOpen(false);
+                          }}
+                          className="w-full bg-red-600 text-white px-3 py-2 rounded-full text-sm hover:bg-red-700 transition flex items-center justify-center gap-2"
+                        >
+                          <Shield className="w-4 h-4" />
+                          Administration
+                        </button>
+                      )}
+                      
+                      {/* Bouton Mon établissement pour les ETABLISSEMENT (mobile) */}
+                      {currentUser.role === 'ETABLISSEMENT' && onGoToEtablissementPanel && (
+                        <button
+                          onClick={() => {
+                            onGoToEtablissementPanel();
+                            setIsMenuOpen(false);
+                          }}
+                          className="w-full bg-blue-600 text-white px-3 py-2 rounded-full text-sm hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                        >
+                          <Building2 className="w-4 h-4" />
+                          Mon établissement
+                        </button>
+                      )}
+                      
                       <button
                         onClick={() => {
                           onLogout();
                           setIsMenuOpen(false);
                         }}
-                        className="w-full bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition flex items-center justify-center gap-2"
+                        className="w-full bg-red-600 text-white px-3 py-2 rounded-full text-sm hover:bg-red-700 transition flex items-center justify-center gap-2"
                       >
                         <LogOut className="w-4 h-4" />
                         Déconnexion
@@ -623,7 +711,7 @@ export default function Header({ currentUser, onLogout, onLogin, onDestinationSe
                         setIsAuthModalOpen(true);
                         setIsMenuOpen(false);
                       }}
-                      className="w-full bg-green-700 text-white px-4 py-2 rounded-full hover:bg-green-800 transition"
+                      className="w-full bg-green-700 text-white px-3 py-2 rounded-full text-sm hover:bg-green-800 transition"
                     >
                       Connexion
                     </button>

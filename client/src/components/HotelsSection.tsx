@@ -1,86 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { Star, MapPin, Wifi, Coffee, Utensils, Car } from 'lucide-react';
+import { Star, MapPin, Wifi, Coffee, Utensils, Car, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import BookingModal from './BookingModal';
+import { getHotels } from '../api/etablissementService';
+import type { EtablissementListItem } from '../api/types';
 
 interface HotelsSectionProps {
   onShowDetails?: (hotel: any) => void;
 }
-
-const hotels = [
-  {
-    id: 1,
-    name: 'Hilton Yaoundé',
-    location: 'Yaoundé, Centre',
-    stars: 5,
-    rating: 4.8,
-    reviews: 342,
-    price: '85 000 FCFA',
-    image: 'https://images.unsplash.com/photo-1729673766770-83160c576668?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBob3RlbCUyMHJlc29ydHxlbnwxfHx8fDE3NjU4NjUxMjN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    amenities: ['Wifi', 'Restaurant', 'Piscine', 'Parking'],
-    category: 'Luxe'
-  },
-  {
-    id: 2,
-    name: 'Seme Beach Hotel',
-    location: 'Kribi, Littoral',
-    stars: 4,
-    rating: 4.6,
-    reviews: 278,
-    price: '65 000 FCFA',
-    image: 'https://images.unsplash.com/photo-1559235196-7a82724ca9a1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiZWFjaCUyMGhvdGVsJTIwdHJvcGljYWx8ZW58MXx8fHwxNzY1OTQ2OTkyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    amenities: ['Wifi', 'Restaurant', 'Plage privée', 'Spa'],
-    category: 'Balnéaire'
-  },
-  {
-    id: 3,
-    name: 'Hôtel Azur',
-    location: 'Douala, Littoral',
-    stars: 4,
-    rating: 4.5,
-    reviews: 195,
-    price: '55 000 FCFA',
-    image: 'https://images.unsplash.com/photo-1654355628827-860147b38be3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBob3RlbCUyMGxvYmJ5fGVufDF8fHx8MTc2NTk0NDc2OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    amenities: ['Wifi', 'Restaurant', 'Bar', 'Parking'],
-    category: 'Business'
-  },
-  {
-    id: 4,
-    name: 'La Résidence Boutique',
-    location: 'Bafoussam, Ouest',
-    stars: 4,
-    rating: 4.7,
-    reviews: 156,
-    price: '48 000 FCFA',
-    image: 'https://images.unsplash.com/photo-1649731000184-7ced04998f44?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxib3V0aXF1ZSUyMGhvdGVsfGVufDF8fHx8MTc2NTg1MjgyMXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    amenities: ['Wifi', 'Petit-déjeuner', 'Jardin', 'Parking'],
-    category: 'Boutique'
-  },
-  {
-    id: 5,
-    name: 'Hotel Prince de Galles',
-    location: 'Yaoundé, Centre',
-    stars: 4,
-    rating: 4.4,
-    reviews: 223,
-    price: '60 000 FCFA',
-    image: 'https://images.unsplash.com/photo-1668393986849-f6d13594410e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3RlbCUyMHBvb2wlMjB2aWV3fGVufDF8fHx8MTc2NTg3MjE4MHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    amenities: ['Wifi', 'Restaurant', 'Piscine', 'Gym'],
-    category: 'Confort'
-  },
-  {
-    id: 6,
-    name: 'Hotel Mermoz',
-    location: 'Douala, Littoral',
-    stars: 5,
-    rating: 4.9,
-    reviews: 410,
-    price: '95 000 FCFA',
-    image: 'https://images.unsplash.com/photo-1632598024410-3d8f24daab57?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3RlbCUyMHN1aXRlJTIwcm9vbXxlbnwxfHx8fDE3NjU4NjAwNDN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    amenities: ['Wifi', 'Restaurant', 'Spa', 'Parking'],
-    category: 'Premium'
-  }
-];
 
 const amenityIcons: { [key: string]: any } = {
   'Wifi': Wifi,
@@ -90,28 +17,67 @@ const amenityIcons: { [key: string]: any } = {
 };
 
 export default function HotelsSection({ onShowDetails }: HotelsSectionProps) {
+  const [hotels, setHotels] = useState<EtablissementListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedHotel, setSelectedHotel] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  const handleReserve = (hotel: any) => {
+  // Nombre d'éléments visibles selon la taille d'écran
+  const getVisibleCount = () => {
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth < 640) return 1;
+      if (window.innerWidth < 1024) return 2;
+      return 3;
+    }
+    return 3;
+  };
+
+  const [visibleCount, setVisibleCount] = useState(getVisibleCount());
+
+  useEffect(() => {
+    const handleResize = () => setVisibleCount(getVisibleCount());
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const fetchHotels = async () => {
+      try {
+        setLoading(true);
+        const response = await getHotels(0, 9);
+        if (response.success && response.data) {
+          setHotels(response.data.content);
+        } else {
+          setError(response.message || 'Erreur lors du chargement des hôtels');
+        }
+      } catch (err) {
+        setError('Erreur de connexion au serveur');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHotels();
+  }, []);
+
+  const handleReserve = (hotel: EtablissementListItem) => {
     setSelectedHotel(hotel);
     setIsModalOpen(true);
   };
 
-  const handleShowDetails = (hotel: any) => {
+  const handleShowDetails = (hotel: EtablissementListItem) => {
     if (onShowDetails) {
       onShowDetails({
-        id: hotel.id.toString(),
-        name: hotel.name,
+        id: hotel.publicId,
+        name: hotel.nom,
         type: 'hotel',
-        description: `${hotel.name} est un hôtel ${hotel.category.toLowerCase()} situé à ${hotel.location}. Cet établissement ${hotel.stars} étoiles offre un excellent rapport qualité-prix et dispose de nombreux équipements pour rendre votre séjour agréable.`,
-        location: hotel.location,
-        price: hotel.price,
-        rating: hotel.rating,
-        reviews: hotel.reviews,
-        image: hotel.image,
-        amenities: hotel.amenities,
-        category: hotel.category
+        description: hotel.description,
+        location: hotel.ville,
+        rating: hotel.nombreFavoris,
+        image: hotel.photoProfile || (hotel.images && hotel.images[0]),
+        category: 'Hôtel'
       });
     }
   };
@@ -120,103 +86,149 @@ export default function HotelsSection({ onShowDetails }: HotelsSectionProps) {
     setIsModalOpen(false);
   };
 
+  const maxIndex = Math.max(0, hotels.length - visibleCount);
+
+  const nextSlide = () => {
+    setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
+  };
+
+  const prevSlide = () => {
+    setCurrentIndex((prev) => Math.max(prev - 1, 0));
+  };
+
+  // Auto-slide
+  useEffect(() => {
+    if (hotels.length > visibleCount) {
+      const timer = setInterval(() => {
+        setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
+      }, 6000);
+      return () => clearInterval(timer);
+    }
+  }, [hotels.length, visibleCount, maxIndex]);
+
   return (
-    <section className="bg-white py-16">
+    <section className="bg-white py-10 sm:py-12 lg:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h2 className="text-3xl mb-2">Hôtels recommandés</h2>
-          <p className="text-gray-600">Séjournez dans les meilleurs établissements du Cameroun</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {hotels.map((hotel) => (
-            <div
-              key={hotel.id}
-              className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition group border border-gray-200"
-            >
-              <div className="relative h-56 overflow-hidden">
-                <ImageWithFallback
-                  src={hotel.image}
-                  alt={hotel.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                />
-                <div className="absolute top-4 left-4 bg-green-700 text-white px-3 py-1 rounded-full text-sm">
-                  {hotel.category}
-                </div>
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1">
-                  {[...Array(hotel.stars)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className="w-3 h-3 fill-yellow-400 text-yellow-400"
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="p-5">
-                <h3 className="text-xl mb-2">{hotel.name}</h3>
-                
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
-                  <MapPin className="w-4 h-4 text-green-700" />
-                  <span>{hotel.location}</span>
-                </div>
-
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm">{hotel.rating}</span>
-                  </div>
-                  <span className="text-sm text-gray-500">
-                    ({hotel.reviews} avis)
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {hotel.amenities.slice(0, 4).map((amenity, index) => {
-                    const Icon = amenityIcons[amenity] || Wifi;
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700"
-                      >
-                        <Icon className="w-3 h-3" />
-                        <span>{amenity}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <div>
-                    <p className="text-sm text-gray-500">À partir de</p>
-                    <p className="text-green-700">{hotel.price}</p>
-                    <p className="text-xs text-gray-400">par nuit</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleShowDetails(hotel)}
-                      className="bg-gray-200 text-gray-700 px-4 py-2 rounded-full hover:bg-gray-300 transition text-sm"
-                    >
-                      Détails
-                    </button>
-                    <button 
-                      onClick={() => handleReserve(hotel)}
-                      className="bg-green-700 text-white px-4 py-2 rounded-full hover:bg-green-800 transition text-sm"
-                    >
-                      Réserver
-                    </button>
-                  </div>
-                </div>
-              </div>
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
+          <div>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl mb-1 sm:mb-2 font-bold">Hébergements recommandés</h2>
+            <p className="text-sm sm:text-base text-gray-600">Séjournez dans les meilleurs établissements du Cameroun</p>
+          </div>
+          {hotels.length > visibleCount && (
+            <div className="flex gap-2">
+              <button
+                onClick={prevSlide}
+                disabled={currentIndex === 0}
+                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-700" />
+              </button>
+              <button
+                onClick={nextSlide}
+                disabled={currentIndex >= maxIndex}
+                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                <ChevronRight className="w-5 h-5 text-gray-700" />
+              </button>
             </div>
-          ))}
+          )}
         </div>
 
-        <div className="text-center mt-12">
-          <button className="bg-green-700 text-white px-8 py-3 rounded-full hover:bg-green-800 transition">
-            Voir tous les hôtels
-          </button>
-        </div>
+        {loading && (
+          <div className="flex justify-center items-center py-8 sm:py-12">
+            <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-green-700" />
+            <span className="ml-2 text-sm sm:text-base text-gray-600">Chargement...</span>
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center py-12">
+            <p className="text-red-500">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && hotels.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500">Aucun hôtel disponible pour le moment.</p>
+          </div>
+        )}
+
+        {!loading && !error && hotels.length > 0 && (
+          <div className="relative overflow-hidden">
+            <div 
+              className="flex transition-transform duration-500 ease-out"
+              style={{ transform: `translateX(-${currentIndex * (100 / visibleCount)}%)` }}
+            >
+              {hotels.map((hotel) => (
+                <div
+                  key={hotel.publicId}
+                  className="flex-shrink-0 px-2"
+                  style={{ width: `${100 / visibleCount}%` }}
+                >
+                  <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition group border border-gray-100 h-full">
+                    <div className="relative h-40 sm:h-48 lg:h-56 overflow-hidden">
+                      <ImageWithFallback
+                        src={hotel.photoProfile || (hotel.images && hotel.images[0]) || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'}
+                        alt={hotel.nom}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      />
+                      <div className="absolute top-2 sm:top-4 left-2 sm:left-4 bg-green-700 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm">
+                        Hôtel
+                      </div>
+                      <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <span className="text-xs">{hotel.nombreFavoris}</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 sm:p-4 lg:p-5">
+                      <h3 className="text-base sm:text-lg lg:text-xl mb-1 sm:mb-2 font-semibold line-clamp-1">{hotel.nom}</h3>
+                      
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">
+                        <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                        <span>{hotel.ville}</span>
+                      </div>
+
+                      <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-3 sm:mb-4">
+                        {hotel.description}
+                      </p>
+
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => handleShowDetails(hotel)}
+                          className="flex-1 bg-gray-100 text-gray-700 px-3 py-1.5 sm:py-2 rounded-full hover:bg-gray-200 transition text-xs sm:text-sm"
+                        >
+                          Détails
+                        </button>
+                        <button 
+                          onClick={() => handleReserve(hotel)}
+                          className="flex-1 bg-green-700 text-white px-3 py-1.5 sm:py-2 rounded-full hover:bg-green-800 transition text-xs sm:text-sm"
+                        >
+                          Réserver
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Indicateurs */}
+            {hotels.length > visibleCount && (
+              <div className="flex justify-center gap-1.5 mt-4">
+                {Array.from({ length: maxIndex + 1 }).map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentIndex(idx)}
+                    className={`h-1.5 rounded-full transition-all ${
+                      idx === currentIndex ? 'w-6 bg-green-600' : 'w-1.5 bg-gray-300'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {selectedHotel && (
@@ -224,10 +236,10 @@ export default function HotelsSection({ onShowDetails }: HotelsSectionProps) {
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           placeData={{
-            name: selectedHotel.name,
-            category: selectedHotel.category,
-            location: selectedHotel.location,
-            image: selectedHotel.image
+            name: selectedHotel.nom,
+            category: 'hotels',
+            location: selectedHotel.ville,
+            image: selectedHotel.photoProfile || (selectedHotel.images && selectedHotel.images[0])
           }}
         />
       )}

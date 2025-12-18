@@ -1,0 +1,52 @@
+# Git
+.git
+.gitignore
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Tests
+coverage/
+*.test.js
+*.spec.js
+__tests__/
+
+# Documentation
+*.md
+!README.md
+
+# Fichiers sensibles
+.env
+.env.*
+!.env.example
+
+# Cache
+.cache
+.parcel-cache
+.eslintcache
+
+# TypeScript cache
+*.tsbuildinfo

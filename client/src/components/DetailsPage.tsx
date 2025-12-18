@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, MapPin, Star, Clock, Calendar, Users, Phone, 
-  Mail, Globe, Share2, Heart, MessageCircle 
+  Mail, Globe, Share2, Heart, MessageCircle, Loader2, HeartOff
 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import BookingModal from './BookingModal';
 import AddReviewModal from './AddReviewModal';
 import ReviewSection, { Review } from './ReviewSection';
-import { User } from '../App';
+import GoogleMap from './GoogleMap';
+import type { User } from '../api/types';
+import { getEtablissementById } from '../api/etablissementService';
+import { getAvisByEtablissement } from '../api/avisService';
+import { toggleFavori } from '../api/userService';
 
 export interface DetailsItem {
-  id: number;
+  id: string | number;
   name: string;
   category: 'hotels' | 'restaurants' | 'activities' | 'popular' | 'events';
   image: string;
@@ -29,6 +33,9 @@ export interface DetailsItem {
   amenities?: string[];
   cuisine?: string;
   eventDate?: string;
+  // Localisation GPS
+  latitude?: number;
+  longitude?: number;
 }
 
 interface DetailsPageProps {
@@ -37,6 +44,7 @@ interface DetailsPageProps {
   currentUser: User | null;
   reviews: Review[];
   onAddReview: (placeId: string, placeName: string, rating: number, comment: string) => void;
+  onOpenAuthModal?: () => void;
 }
 
 export default function DetailsPage({ 
@@ -44,17 +52,48 @@ export default function DetailsPage({
   onBack, 
   currentUser, 
   reviews, 
-  onAddReview 
+  onAddReview,
+  onOpenAuthModal
 }: DetailsPageProps) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isAddReviewModalOpen, setIsAddReviewModalOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
 
   // Scroll vers le haut lors du chargement de la page
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [item.id]);
+
+  // Vérifier si l'établissement est dans les favoris de l'utilisateur
+  useEffect(() => {
+    if (currentUser && currentUser.favorisIds) {
+      setIsFavorite(currentUser.favorisIds.includes(item.id.toString()));
+    } else {
+      setIsFavorite(false);
+    }
+  }, [currentUser, item.id]);
+
+  const handleToggleFavorite = async () => {
+    if (!currentUser) {
+      // Ouvrir le modal d'authentification si l'utilisateur n'est pas connecté
+      onOpenAuthModal?.();
+      return;
+    }
+
+    setIsTogglingFavorite(true);
+    try {
+      const response = await toggleFavori(item.id.toString());
+      if (response.success) {
+        setIsFavorite(!isFavorite);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des favoris:', error);
+    } finally {
+      setIsTogglingFavorite(false);
+    }
+  };
 
   const allImages = item.images || [item.image];
 
@@ -115,14 +154,20 @@ export default function DetailsPage({
                 />
                 <div className="absolute top-4 right-4 flex gap-2">
                   <button
-                    onClick={() => setIsFavorite(!isFavorite)}
+                    onClick={handleToggleFavorite}
+                    disabled={isTogglingFavorite}
                     className={`p-3 rounded-full backdrop-blur-sm transition ${
                       isFavorite 
                         ? 'bg-red-500 text-white' 
                         : 'bg-white/90 text-gray-700 hover:bg-red-50'
-                    }`}
+                    } ${isTogglingFavorite ? 'opacity-50 cursor-wait' : ''}`}
+                    title={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
                   >
-                    <Heart className={`w-5 h-5 ${isFavorite ? 'fill-white' : ''}`} />
+                    {isTogglingFavorite ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Heart className={`w-5 h-5 ${isFavorite ? 'fill-white' : ''}`} />
+                    )}
                   </button>
                   <button
                     onClick={handleShare}
@@ -342,15 +387,24 @@ export default function DetailsPage({
                 </div>
               )}
 
-              {/* Location Map Placeholder */}
+              {/* Location Map */}
               <div className="border-t pt-6 mt-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Localisation</h3>
-                <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <div className="text-center text-gray-500">
-                    <MapPin className="w-12 h-12 mx-auto mb-2" />
-                    <p className="text-sm">{item.location}</p>
+                {item.latitude && item.longitude ? (
+                  <GoogleMap
+                    latitude={item.latitude}
+                    longitude={item.longitude}
+                    name={item.name}
+                    address={item.location}
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="text-center text-gray-500">
+                      <MapPin className="w-12 h-12 mx-auto mb-2" />
+                      <p className="text-sm">{item.location}</p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -379,6 +433,8 @@ export default function DetailsPage({
           placeId={item.id.toString()}
           placeName={item.name}
           onAddReview={onAddReview}
+          currentUser={currentUser}
+          onOpenAuthModal={onOpenAuthModal}
         />
       )}
     </div>

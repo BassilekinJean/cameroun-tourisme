@@ -77,6 +77,9 @@ public class JWTutils {
      * Cela permet de s'assurer que le token ne sera plus valide avant son expiration naturelle.
      */
     public void invalidateToken(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            return;
+        }
         Date expiration = extractExpiration(token);
         long timeLeft = expiration.getTime() - System.currentTimeMillis(); 
 

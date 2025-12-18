@@ -1,0 +1,45 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+*.iml
+.vscode
+*.swp
+*.swo
+
+# Build
+target/
+!target/classes/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Maven Wrapper (sera recopié séparément)
+# Les fichiers .mvn sont nécessaires pour le build
+
+# Tests
+**/test/
+
+# Documentation
+*.md
+!README.md
+
+# Docker (éviter la récursion)
+Dockerfile
+docker-compose*.yml
+
+# Uploads temporaires
+uploads/*
+!uploads/.gitkeep
+
+# Fichiers sensibles
+.env
+.env.*
+!.env.example

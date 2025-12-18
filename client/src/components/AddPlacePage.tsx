@@ -15,6 +15,8 @@ export interface PlaceData {
   address: string;
   city: string;
   region: string;
+  latitude?: number;
+  longitude?: number;
   phone?: string;
   email?: string;
   website?: string;
@@ -31,6 +33,8 @@ export default function AddPlacePage({ onBackToHome, currentUser, onSubmitPlace 
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [region, setRegion] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [website, setWebsite] = useState('');
@@ -91,6 +95,8 @@ export default function AddPlacePage({ onBackToHome, currentUser, onSubmitPlace 
       address,
       city,
       region,
+      latitude: latitude ? parseFloat(latitude) : undefined,
+      longitude: longitude ? parseFloat(longitude) : undefined,
       phone: phone || undefined,
       email: email || undefined,
       website: website || undefined,
@@ -108,6 +114,8 @@ export default function AddPlacePage({ onBackToHome, currentUser, onSubmitPlace 
     setAddress('');
     setCity('');
     setRegion('');
+    setLatitude('');
+    setLongitude('');
     setPhone('');
     setEmail('');
     setWebsite('');
@@ -274,6 +282,43 @@ export default function AddPlacePage({ onBackToHome, currentUser, onSubmitPlace 
                       <option key={reg} value={reg}>{reg}</option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              {/* Coordonnées GPS */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="latitude" className="block text-gray-700 mb-2 flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Latitude
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    id="latitude"
+                    value={latitude}
+                    onChange={(e) => setLatitude(e.target.value)}
+                    placeholder="Ex: 2.9391"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Coordonnée GPS (optionnel)</p>
+                </div>
+
+                <div>
+                  <label htmlFor="longitude" className="block text-gray-700 mb-2 flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Longitude
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    id="longitude"
+                    value={longitude}
+                    onChange={(e) => setLongitude(e.target.value)}
+                    placeholder="Ex: 9.9091"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Coordonnée GPS (optionnel)</p>
                 </div>
               </div>
             </div>

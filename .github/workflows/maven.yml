@@ -15,9 +15,9 @@ permissions:
   
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "dev", "prod" ]
   pull_request:
-    branches: [ "dev" ]
+    branches: [ "dev", "prod" ]
 
 
 jobs:
@@ -37,20 +37,6 @@ jobs:
             MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD_MYSQL }}
           options: --health-cmd="mysqladmin ping --silent" --health-interval=10s --health-timeout=5s --health-retries=10
 
-        # keycloak:
-        #   image: quay.io/keycloak/keycloak:21.1.1
-        #   ports:
-        #     - 8000:8080
-        #   options: >-
-        #       --health-cmd="curl -f http://localhost:8080/realms/master || exit 1"
-        #       --health-interval=10s
-        #       --health-timeout=5s
-        #       --health-retries=5
-        #       start-dev
-        #   env:
-        #     KEYCLOAK_ADMIN: admin
-        #     KEYCLOAK_ADMIN_PASSWORD: admin
-
         mailhog:
           image: mailhog/mailhog
           ports:
@@ -65,46 +51,16 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
-      - name: Start Keycloak (dev) with docker
-        env:
-          KEYCLOAK_ADMIN: admin
-          # Optionnel: utilisez un secret GitHub au lieu de mettre en clair
-          # KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
-          KEYCLOAK_ADMIN_PASSWORD: adminpassword
-        run: |
-
-
-            # Remove any previous container (if present)
-            docker rm -f keycloak || true
-
-            # Start Keycloak in development mode (start-dev)
-            docker run -d --name keycloak \
-              -e KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN} \
-              -e KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD} \
-              -p 8000:8080 \
-              quay.io/keycloak/keycloak:21.1.1 start-dev
-
-            # Wait for Keycloak to be ready (timeout ~2 minutes)
-            echo "Waiting for Keycloak to be ready on http://localhost:8000/realms/master ..."
-            for i in $(seq 1 60); do
-              if curl -fsS http://localhost:8000/realms/master >/dev/null 2>&1; then
-                echo "Keycloak is ready"
-                break
-              fi
-              echo "Keycloak not ready yet (attempt $i/60). Sleeping 2s..."
-              sleep 2
-            done
-
-            # Fail if Keycloak never became ready
-            if ! curl -fsS http://localhost:8000/realms/master >/dev/null 2>&1; then
-              echo "Keycloak did not become ready in time"
-              docker logs keycloak || true
-              exit 1
-            fi
       - name: Build with Maven
         working-directory: server
+        env:
+          DB_USER_MYSQL: ${{ secrets.DB_USER_MYSQL || 'testuser' }}
+          DB_PASSWORD_MYSQL: ${{ secrets.DB_PASSWORD_MYSQL || 'testpassword' }}
         run: mvn -B package --file  pom.xml
 
       # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
       - name: Update dependency graph
         uses: advanced-security/maven-dependency-submission-action@v4
+        with:
+          directory: server
+        continue-on-error: true

@@ -3,6 +3,9 @@ package com.cameroun_tour.tourisme.voyageur;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.HashSet;
 
 import org.hibernate.annotations.CurrentTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -12,6 +15,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.cameroun_tour.tourisme.common.utils.enums.Role;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -20,8 +24,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-
-
+import jakarta.persistence.JoinColumn;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -41,6 +44,10 @@ public class UtilisateurEntity implements UserDetails{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true, updatable = false)
+    @Builder.Default
+    private UUID publicId = UUID.randomUUID();
+
     @NotBlank(message = "Le nom est obligatoire")
     private String nomComplet;
 
@@ -59,11 +66,28 @@ public class UtilisateurEntity implements UserDetails{
     private String photoProfile;
 
     @Builder.Default
+    @Column(nullable = false)
+    private int failedAttempt = 0;
+
+    private LocalDateTime lockTime;
+
+    @Builder.Default
+    private boolean accountLocked = false; 
+
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     private Role role = Role.USER;
 
+
+    // Stocke les publicId (UUID) des établissements favoris
+    // Cela évite une dépendance JPA directe vers le module etablissement
     @ElementCollection
-    private List<String> listeDesFavoris;
+    @CollectionTable(
+            name = "user_favoris",
+            joinColumns = @JoinColumn(name = "utilisateur_entity_id"))
+    @Column(name = "etablissement_public_id")
+    @Builder.Default
+    private Set<UUID> favorisIds = new HashSet<>();
 
     @CurrentTimestamp
     @Column(updatable = false)
