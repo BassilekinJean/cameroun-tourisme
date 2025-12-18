@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.hateoas.RepresentationModel;
 
+import com.cameroun_tour.tourisme.common.utils.enums.Role;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,4 +25,5 @@ public class VoyageurResponse extends RepresentationModel<VoyageurResponse> {
     private String paysOrigine;
     private String photoProfile;
     Set<UUID> favorisIds;
+    private Role role;
 }

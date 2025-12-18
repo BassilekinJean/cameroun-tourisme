@@ -6,6 +6,9 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.cameroun_tour.tourisme.common.contracts.AdminCreateEtablissementRequest;
+import com.cameroun_tour.tourisme.common.contracts.AdminEtablissementDto;
+import com.cameroun_tour.tourisme.common.contracts.AdminUpdateEtablissementRequest;
 import com.cameroun_tour.tourisme.common.contracts.AvisCreationDto;
 import com.cameroun_tour.tourisme.common.utils.enums.TypeLieu;
 import com.cameroun_tour.tourisme.etablissement.model.LieuRegistrationDto;
@@ -46,5 +49,41 @@ public interface EtablissementServiceApi {
      * Récupérer les établissements populaires
      */
     List<Etablissement> findPopular(int limit);
-    
+
+    // ==================== MÉTHODES ADMIN ====================
+
+    /**
+     * Compte total des établissements
+     */
+    long countAll();
+
+    /**
+     * Compte par catégorie
+     */
+    long countByCategorie(TypeLieu categorie);
+
+    /**
+     * Recherche paginée des établissements pour l'admin
+     */
+    Page<AdminEtablissementDto> searchEtablissementsForAdmin(int page, int size, String sort, String sortDir, String search);
+
+    /**
+     * Création d'un établissement par l'admin
+     */
+    AdminEtablissementDto createEtablissementForAdmin(AdminCreateEtablissementRequest request);
+
+    /**
+     * Mise à jour d'un établissement par l'admin
+     */
+    AdminEtablissementDto updateEtablissementForAdmin(UUID publicId, AdminUpdateEtablissementRequest request);
+
+    /**
+     * Suppression d'un établissement par l'admin
+     */
+    void deleteEtablissementByPublicId(UUID publicId);
+
+    /**
+     * Vérifie si un email d'établissement existe déjà
+     */
+    boolean existsByEmail(String email);
 }

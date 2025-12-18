@@ -9,9 +9,13 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.cameroun_tour.tourisme.common.contracts.AdminCreateEtablissementRequest;
+import com.cameroun_tour.tourisme.common.contracts.AdminEtablissementDto;
+import com.cameroun_tour.tourisme.common.contracts.AdminUpdateEtablissementRequest;
 import com.cameroun_tour.tourisme.common.contracts.AvisCreationDto;
 import com.cameroun_tour.tourisme.common.events.AvisPublieEvent;
 import com.cameroun_tour.tourisme.common.utils.enums.TypeLieu;
@@ -145,5 +149,138 @@ public class EtablissementServiceImpl implements EtablissementServiceApi {
     public List<Etablissement> findPopular(int limit) {
         return etablissementRepository.findTopByOrderByNombreFavorisDesc(PageRequest.of(0, limit));
     }
-    
+
+    // ==================== MÉTHODES ADMIN ====================
+
+    @Override
+    public long countAll() {
+        return etablissementRepository.count();
+    }
+
+    @Override
+    public long countByCategorie(TypeLieu categorie) {
+        return etablissementRepository.countByCategorie(categorie);
+    }
+
+    @Override
+    public Page<AdminEtablissementDto> searchEtablissementsForAdmin(int page, int size, String sort, String sortDir, String search) {
+        Sort sortOrder = sortDir.equalsIgnoreCase("asc") 
+            ? Sort.by(sort).ascending() 
+            : Sort.by(sort).descending();
+        
+        PageRequest pageable = PageRequest.of(page, size, sortOrder);
+        
+        Page<Etablissement> etablissements;
+        if (search != null && !search.isBlank()) {
+            etablissements = etablissementRepository.searchByQuery(search, pageable);
+        } else {
+            etablissements = etablissementRepository.findAll(pageable);
+        }
+        
+        return etablissements.map(this::toAdminEtablissementDto);
+    }
+
+    @Override
+    @Transactional
+    public AdminEtablissementDto createEtablissementForAdmin(AdminCreateEtablissementRequest request) {
+        if (etablissementRepository.existsByEmail(request.email())) {
+            throw new IllegalArgumentException("Cet email est déjà utilisé");
+        }
+
+        Etablissement etablissement = new Etablissement();
+        etablissement.setNom(request.nom());
+        etablissement.setDescription(request.description());
+        etablissement.setEmail(request.email());
+        etablissement.setPassword(passwordEncoder.encode(request.password()));
+        etablissement.setTelephone(request.telephone());
+        etablissement.setPhotoProfile(request.photoProfile());
+        etablissement.setAdresse(request.adresse());
+        etablissement.setVille(request.ville());
+        etablissement.setImages(request.images());
+        etablissement.setCategorie(request.categorie());
+        
+        if (request.latitude() != null && request.longitude() != null) {
+            etablissement.setLocalisation(new Etablissement.Localisation(request.latitude(), request.longitude()));
+        }
+
+        Etablissement saved = etablissementRepository.save(etablissement);
+        return toAdminEtablissementDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public AdminEtablissementDto updateEtablissementForAdmin(UUID publicId, AdminUpdateEtablissementRequest request) {
+        Etablissement etablissement = etablissementRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new EntityNotFoundException("Établissement non trouvé avec l'ID: " + publicId));
+        
+        if (request.nom() != null) {
+            etablissement.setNom(request.nom());
+        }
+        if (request.description() != null) {
+            etablissement.setDescription(request.description());
+        }
+        if (request.email() != null) {
+            etablissement.setEmail(request.email());
+        }
+        if (request.telephone() != null) {
+            etablissement.setTelephone(request.telephone());
+        }
+        if (request.adresse() != null) {
+            etablissement.setAdresse(request.adresse());
+        }
+        if (request.ville() != null) {
+            etablissement.setVille(request.ville());
+        }
+        if (request.categorie() != null) {
+            etablissement.setCategorie(request.categorie());
+        }
+        if (request.images() != null) {
+            etablissement.setImages(request.images());
+        }
+        if (request.photoProfile() != null) {
+            etablissement.setPhotoProfile(request.photoProfile());
+        }
+        if (request.latitude() != null && request.longitude() != null) {
+            etablissement.setLocalisation(new Etablissement.Localisation(request.latitude(), request.longitude()));
+        }
+        
+        Etablissement saved = etablissementRepository.save(etablissement);
+        return toAdminEtablissementDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public void deleteEtablissementByPublicId(UUID publicId) {
+        Etablissement etablissement = etablissementRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new EntityNotFoundException("Établissement non trouvé avec l'ID: " + publicId));
+        etablissementRepository.delete(etablissement);
+    }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        return etablissementRepository.existsByEmail(email);
+    }
+
+    /**
+     * Convertit une entité Etablissement en AdminEtablissementDto
+     */
+    private AdminEtablissementDto toAdminEtablissementDto(Etablissement etablissement) {
+        return AdminEtablissementDto.builder()
+                .publicId(etablissement.getPublicId())
+                .nom(etablissement.getNom())
+                .description(etablissement.getDescription())
+                .email(etablissement.getEmail())
+                .telephone(etablissement.getTelephone())
+                .adresse(etablissement.getAdresse())
+                .ville(etablissement.getVille())
+                .photoProfile(etablissement.getPhotoProfile())
+                .images(etablissement.getImages())
+                .categorie(etablissement.getCategorie())
+                .latitude(etablissement.getLocalisation() != null ? etablissement.getLocalisation().getLatitude() : null)
+                .longitude(etablissement.getLocalisation() != null ? etablissement.getLocalisation().getLongitude() : null)
+                .nombreFavoris(etablissement.getNombreFavoris())
+                .nombreAvis(0) // À calculer depuis le module Avis si nécessaire
+                .rating(null) // À calculer si nécessaire
+                .build();
+    }
 }

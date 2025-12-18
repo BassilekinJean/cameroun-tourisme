@@ -383,10 +383,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      {/* Backdrop avec effet glassmorphism */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      {/* Backdrop avec effet glassmorphism amélioré */}
       <div 
-        className="absolute inset-0 bg-gradient-to-br from-green-900/40 via-black/60 to-emerald-900/40 backdrop-blur-md"
+        className="absolute inset-0 bg-gradient-to-br from-green-900/50 via-black/70 to-yellow-900/40 backdrop-blur-xl"
         onClick={() => {
           resetAllForms();
           setAuthView('login');
@@ -395,81 +395,84 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
       />
       
       {/* Modal Container */}
-      <div className="relative w-full max-w-lg animate-in fade-in zoom-in-95 duration-300">
-        {/* Decorative Elements */}
-        <div className="absolute -top-20 -left-20 w-40 h-40 bg-green-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative w-full max-w-[420px] animate-in fade-in zoom-in-95 duration-300">
+        {/* Decorative Elements améliorés */}
+        <div className="hidden sm:block absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full blur-3xl opacity-30 pointer-events-none animate-pulse" />
+        <div className="hidden sm:block absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full blur-3xl opacity-20 pointer-events-none animate-pulse" />
+        <div className="hidden sm:block absolute top-1/2 -left-10 w-20 h-20 bg-green-500/30 rounded-full blur-2xl pointer-events-none" />
         
-        {/* Main Card */}
-        <div className="relative bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-green-900/20 overflow-hidden border border-white/20">
-          {/* Header Gradient Bar */}
-          <div className="h-2 bg-gradient-to-r from-green-600 via-emerald-500 to-green-700" />
+        {/* Main Card avec design amélioré */}
+        <div className="relative bg-white rounded-3xl shadow-2xl shadow-black/30 overflow-hidden max-h-[95vh] overflow-y-auto">
+          {/* Header avec dégradé aux couleurs du Cameroun */}
+          <div className="h-2 bg-gradient-to-r from-green-600 via-red-500 to-yellow-500" />
           
-          {/* Close Button */}
+          {/* Close Button amélioré */}
           <button
             onClick={() => {
               resetAllForms();
               setAuthView('login');
               onClose();
             }}
-            className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all duration-200 z-10"
+            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200 z-10 hover:rotate-90"
             aria-label="Fermer"
           >
             <X className="w-5 h-5" />
           </button>
 
           {/* Content */}
-          <div className={`transition-all duration-200 ${isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
+          <div className={`transition-all duration-300 ${isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
             
             {/* ==================== LOGIN VIEW ==================== */}
             {authView === 'login' && (
-              <div className="p-8 pt-10">
-                {/* Header */}
-                <div className="text-center mb-8">
-                  <div className="relative inline-block">
-                    <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl blur-lg opacity-30 animate-pulse" />
-                    <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg">
+              <div className="p-6 sm:p-8">
+                {/* Header amélioré */}
+                <div className="text-center mb-6">
+                  <div className="relative inline-block mb-4">
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl blur-xl opacity-40 animate-pulse" />
+                    <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 rounded-2xl shadow-xl shadow-green-500/30">
                       <MapPin className="w-8 h-8 text-white" />
                     </div>
                   </div>
-                  <h2 className="mt-6 text-3xl font-bold bg-gradient-to-r from-gray-900 via-green-800 to-gray-900 bg-clip-text text-transparent">
-                    Bienvenue !
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                    Bon retour ! 👋
                   </h2>
                   <p className="mt-2 text-gray-500">Connectez-vous pour explorer le Cameroun</p>
                 </div>
 
                 {/* Error Alert */}
                 {error && (
-                  <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top-2">
-                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">{error}</p>
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 animate-in slide-in-from-top-2">
+                    <div className="p-1 bg-red-100 rounded-full">
+                      <AlertCircle className="w-4 h-4 text-red-600" />
+                    </div>
+                    <p className="text-sm text-red-700 flex-1">{error}</p>
                   </div>
                 )}
 
-                {/* Google OAuth Button */}
+                {/* Google OAuth Button amélioré */}
                 <button
                   onClick={handleGoogleLogin}
                   disabled={isLoading}
-                  className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-white border-2 border-gray-200 rounded-2xl font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-white border-2 border-gray-200 rounded-2xl font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
                   <GoogleLogo />
-                  <span>Continuer avec Google</span>
+                  <span className="group-hover:translate-x-0.5 transition-transform">Continuer avec Google</span>
                 </button>
 
-                {/* Divider */}
-                <div className="relative my-8">
+                {/* Divider amélioré */}
+                <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200" />
+                    <div className="w-full border-t-2 border-gray-100" />
                   </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-gray-400">ou avec votre email</span>
+                  <div className="relative flex justify-center">
+                    <span className="px-4 bg-white text-sm text-gray-400 font-medium">ou avec votre email</span>
                   </div>
                 </div>
 
-                {/* Login Form */}
-                <form onSubmit={handleLogin} className="space-y-5">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                {/* Login Form amélioré */}
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-semibold text-gray-700">Email</label>
                     <div className="relative group">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <Mail className="w-5 h-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
@@ -478,7 +481,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                         type="email"
                         value={loginData.email}
                         onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                        className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-200"
+                        className="w-full pl-12 pr-4 py-3.5 text-base bg-gray-50 border-2 border-gray-100 rounded-xl focus:outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-200"
                         placeholder="exemple@email.com"
                         required
                         disabled={isLoading}
@@ -486,8 +489,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Mot de passe</label>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-semibold text-gray-700">Mot de passe</label>
                     <div className="relative group">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <Lock className="w-5 h-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
@@ -496,8 +499,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                         type={showPassword ? 'text' : 'password'}
                         value={loginData.password}
                         onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                        className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-200"
-                        placeholder="Entrez votre mot de passe"
+                        className="w-full pl-12 pr-12 py-3.5 text-base bg-gray-50 border-2 border-gray-100 rounded-xl focus:outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-200"
+                        placeholder="••••••••"
                         required
                         disabled={isLoading}
                       />
@@ -511,18 +514,18 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between">
                     <label className="flex items-center gap-2 cursor-pointer group">
                       <input 
                         type="checkbox" 
-                        className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 cursor-pointer" 
+                        className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded-md focus:ring-green-500 focus:ring-2 cursor-pointer" 
                       />
-                      <span className="text-gray-600 group-hover:text-gray-800 transition-colors">Se souvenir de moi</span>
+                      <span className="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">Se souvenir de moi</span>
                     </label>
                     <button
                       type="button"
                       onClick={() => switchView('forgot-password')}
-                      className="text-green-600 hover:text-green-700 font-medium hover:underline transition-all"
+                      className="text-sm text-green-600 hover:text-green-700 font-semibold hover:underline transition-all"
                     >
                       Mot de passe oublié ?
                     </button>
@@ -531,12 +534,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-2xl font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-green-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5"
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-xl font-bold text-base hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-green-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-green-500/30 hover:shadow-2xl hover:shadow-green-500/40 hover:-translate-y-0.5 active:translate-y-0"
                   >
                     {isLoading ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Connexion en cours...</span>
+                        <span>Connexion...</span>
                       </>
                     ) : (
                       <span>Se connecter</span>
@@ -545,13 +548,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                 </form>
 
                 {/* Footer */}
-                <div className="mt-8 text-center">
-                  <p className="text-gray-600">
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-gray-600">
                     Nouveau sur CamerTrip ?{' '}
                     <button
                       type="button"
                       onClick={() => switchView('register')}
-                      className="text-green-600 hover:text-green-700 font-semibold hover:underline transition-all"
+                      className="text-green-600 hover:text-green-700 font-bold hover:underline transition-all"
                     >
                       Créer un compte
                     </button>
@@ -562,62 +565,64 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
 
             {/* ==================== REGISTER VIEW ==================== */}
             {authView === 'register' && (
-              <div className="p-8 pt-10 max-h-[85vh] overflow-y-auto">
-                {/* Header */}
-                <div className="text-center mb-6">
-                  <div className="relative inline-block">
-                    <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl blur-lg opacity-30 animate-pulse" />
-                    <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg">
-                      <User className="w-8 h-8 text-white" />
+              <div className="p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+                {/* Header amélioré */}
+                <div className="text-center mb-5">
+                  <div className="relative inline-block mb-3">
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl blur-xl opacity-40 animate-pulse" />
+                    <div className="relative inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 rounded-2xl shadow-xl shadow-green-500/30">
+                      <User className="w-7 h-7 text-white" />
                     </div>
                   </div>
-                  <h2 className="mt-5 text-2xl font-bold bg-gradient-to-r from-gray-900 via-green-800 to-gray-900 bg-clip-text text-transparent">
-                    Créer un compte
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Rejoignez-nous ! 🇨🇲
                   </h2>
-                  <p className="mt-2 text-gray-500 text-sm">Rejoignez la communauté CamerTrip</p>
+                  <p className="mt-1 text-gray-500 text-sm">Créez votre compte CamerTrip</p>
                 </div>
 
                 {/* Error Alert */}
                 {error && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2 animate-in slide-in-from-top-2">
-                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">{error}</p>
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 animate-in slide-in-from-top-2">
+                    <div className="p-1 bg-red-100 rounded-full">
+                      <AlertCircle className="w-4 h-4 text-red-600" />
+                    </div>
+                    <p className="text-sm text-red-700 flex-1">{error}</p>
                   </div>
                 )}
 
-                {/* Google OAuth Button */}
+                {/* Google OAuth Button amélioré */}
                 <button
                   onClick={handleGoogleLogin}
                   disabled={isLoading}
-                  className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
                   <GoogleLogo />
-                  <span>S'inscrire avec Google</span>
+                  <span className="group-hover:translate-x-0.5 transition-transform">S'inscrire avec Google</span>
                 </button>
 
-                {/* Divider */}
+                {/* Divider amélioré */}
                 <div className="relative my-5">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200" />
+                    <div className="w-full border-t-2 border-gray-100" />
                   </div>
-                  <div className="relative flex justify-center text-xs">
-                    <span className="px-3 bg-white text-gray-400">ou remplir le formulaire</span>
+                  <div className="relative flex justify-center">
+                    <span className="px-4 bg-white text-sm text-gray-400 font-medium">ou</span>
                   </div>
                 </div>
 
-                {/* Register Form */}
+                {/* Register Form amélioré */}
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-gray-700">Nom complet</label>
+                    <label className="block text-sm font-semibold text-gray-700">Nom complet</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <User className="w-4 h-4 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <User className="w-5 h-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
                       </div>
                       <input
                         type="text"
                         value={registerData.nomComplet}
                         onChange={(e) => setRegisterData({ ...registerData, nomComplet: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-200 text-sm"
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-200"
                         placeholder="Prénom et Nom"
                         required
                         disabled={isLoading}
@@ -626,16 +631,16 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                    <label className="block text-sm font-semibold text-gray-700">Email</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Mail className="w-4 h-4 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Mail className="w-5 h-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
                       </div>
                       <input
                         type="email"
                         value={registerData.email}
                         onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-200 text-sm"
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-200"
                         placeholder="exemple@email.com"
                         required
                         disabled={isLoading}
@@ -644,15 +649,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-gray-700">Pays d'origine</label>
+                    <label className="block text-sm font-semibold text-gray-700">Pays d'origine</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Globe className="w-4 h-4 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Globe className="w-5 h-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
                       </div>
                       <select
                         value={registerData.paysOrigine}
                         onChange={(e) => setRegisterData({ ...registerData, paysOrigine: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-200 text-sm appearance-none cursor-pointer"
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-200 appearance-none cursor-pointer"
                         disabled={isLoading}
                       >
                         <option value="Cameroun">🇨🇲 Cameroun</option>
@@ -672,7 +677,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-gray-700">Mot de passe</label>
+                      <label className="block text-sm font-semibold text-gray-700">Mot de passe</label>
                       <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <Lock className="w-4 h-4 text-gray-400 group-focus-within:text-green-500 transition-colors" />
@@ -698,7 +703,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-gray-700">Confirmer</label>
+                      <label className="block text-sm font-semibold text-gray-700">Confirmer</label>
                       <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <Lock className="w-4 h-4 text-gray-400 group-focus-within:text-green-500 transition-colors" />
@@ -726,7 +731,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3.5 rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-green-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5 mt-2"
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3.5 rounded-xl font-bold text-base hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-green-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-green-500/30 hover:shadow-2xl hover:shadow-green-500/40 hover:-translate-y-0.5 active:translate-y-0 mt-2"
                   >
                     {isLoading ? (
                       <>
@@ -740,13 +745,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                 </form>
 
                 {/* Footer */}
-                <div className="mt-6 text-center">
+                <div className="mt-5 text-center">
                   <p className="text-sm text-gray-600">
                     Déjà un compte ?{' '}
                     <button
                       type="button"
                       onClick={() => switchView('login')}
-                      className="text-green-600 hover:text-green-700 font-semibold hover:underline transition-all"
+                      className="text-green-600 hover:text-green-700 font-bold hover:underline transition-all"
                     >
                       Se connecter
                     </button>
@@ -757,36 +762,40 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
 
             {/* ==================== VERIFY EMAIL OTP VIEW ==================== */}
             {authView === 'verify-email-otp' && (
-              <div className="p-8 pt-10">
-                <div className="text-center mb-8">
-                  <div className="relative inline-block">
-                    <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl blur-lg opacity-30 animate-pulse" />
-                    <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg">
-                      <Shield className="w-8 h-8 text-white" />
+              <div className="p-6 sm:p-8">
+                <div className="text-center mb-6">
+                  <div className="relative inline-block mb-3">
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl blur-xl opacity-40 animate-pulse" />
+                    <div className="relative inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-xl shadow-green-500/30">
+                      <Shield className="w-7 h-7 text-white" />
                     </div>
                   </div>
-                  <h2 className="mt-6 text-2xl font-bold text-gray-900">Vérifiez votre email</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Vérifiez votre email</h2>
                   <p className="mt-2 text-gray-500">
-                    Code envoyé à <span className="text-green-600 font-medium">{pendingEmail}</span>
+                    Code envoyé à <span className="text-green-600 font-semibold">{pendingEmail}</span>
                   </p>
                 </div>
 
                 {successMessage && (
-                  <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top-2">
-                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-green-700">{successMessage}</p>
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3 animate-in slide-in-from-top-2">
+                    <div className="p-1 bg-green-100 rounded-full">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    </div>
+                    <p className="text-sm text-green-700 flex-1">{successMessage}</p>
                   </div>
                 )}
 
                 {error && (
-                  <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top-2">
-                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">{error}</p>
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 animate-in slide-in-from-top-2">
+                    <div className="p-1 bg-red-100 rounded-full">
+                      <AlertCircle className="w-4 h-4 text-red-600" />
+                    </div>
+                    <p className="text-sm text-red-700 flex-1">{error}</p>
                   </div>
                 )}
 
-                <form onSubmit={handleVerifyEmailOtp} className="space-y-6">
-                  <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>
+                <form onSubmit={handleVerifyEmailOtp} className="space-y-5">
+                  <div className="flex justify-center gap-2 sm:gap-3" onPaste={handleOtpPaste}>
                     {otp.map((digit, index) => (
                       <input
                         key={index}
@@ -797,7 +806,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                         value={digit}
                         onChange={(e) => handleOtpChange(index, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        className="w-12 h-14 text-center text-xl font-bold bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-200"
+                        className="w-9 h-11 sm:w-10 sm:h-12 text-center text-lg sm:text-xl font-bold bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/10 transition-all duration-200"
                         disabled={isLoading}
                       />
                     ))}
@@ -806,11 +815,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   <button
                     type="submit"
                     disabled={isLoading || otp.join('').length !== 6}
-                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-2xl font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-green-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-500/25"
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-2.5 sm:py-3 rounded-lg font-semibold text-sm hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-green-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-500/25"
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Vérification...</span>
                       </>
                     ) : (
@@ -819,7 +828,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   </button>
 
                   <div className="text-center">
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-gray-500 text-xs">
                       Pas de code reçu ?{' '}
                       {resendCountdown > 0 ? (
                         <span className="text-gray-400 font-medium">Renvoyer dans {resendCountdown}s</span>
@@ -837,11 +846,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   </div>
                 </form>
 
-                <div className="mt-6 text-center">
+                <div className="mt-3 sm:mt-4 text-center">
                   <button
                     type="button"
                     onClick={() => switchView('register')}
-                    className="text-gray-500 hover:text-gray-700 text-sm hover:underline transition"
+                    className="text-gray-500 hover:text-gray-700 text-xs hover:underline transition"
                   >
                     ← Modifier l'adresse email
                   </button>
@@ -851,37 +860,37 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
 
             {/* ==================== FORGOT PASSWORD VIEW ==================== */}
             {authView === 'forgot-password' && (
-              <div className="p-8 pt-10">
-                <div className="text-center mb-8">
+              <div className="p-4 pt-6 sm:p-5 sm:pt-7">
+                <div className="text-center mb-4 sm:mb-5">
                   <div className="relative inline-block">
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl blur-lg opacity-30 animate-pulse" />
-                    <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl shadow-lg">
-                      <KeyRound className="w-8 h-8 text-white" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl blur-lg opacity-30 animate-pulse" />
+                    <div className="relative inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg">
+                      <KeyRound className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
                   </div>
-                  <h2 className="mt-6 text-2xl font-bold text-gray-900">Mot de passe oublié ?</h2>
-                  <p className="mt-2 text-gray-500">Entrez votre email pour réinitialiser</p>
+                  <h2 className="mt-2 sm:mt-3 text-lg sm:text-xl font-bold text-gray-900">Mot de passe oublié ?</h2>
+                  <p className="mt-1 text-gray-500 text-xs sm:text-sm">Entrez votre email pour réinitialiser</p>
                 </div>
 
                 {error && (
-                  <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top-2">
-                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">{error}</p>
+                  <div className="mb-3 p-2 sm:p-2.5 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 animate-in slide-in-from-top-2">
+                    <AlertCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-700">{error}</p>
                   </div>
                 )}
 
-                <form onSubmit={handleForgotPassword} className="space-y-5">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Adresse email</label>
+                <form onSubmit={handleForgotPassword} className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-medium text-gray-700">Adresse email</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Mail className="w-5 h-5 text-gray-400 group-focus-within:text-amber-500 transition-colors" />
+                      <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                        <Mail className="w-3.5 h-3.5 text-gray-400 group-focus-within:text-amber-500 transition-colors" />
                       </div>
                       <input
                         type="email"
                         value={forgotPasswordEmail}
                         onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all duration-200"
+                        className="w-full pl-8 pr-3 py-2 sm:py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all duration-200 text-sm"
                         placeholder="exemple@email.com"
                         required
                         disabled={isLoading}
@@ -892,11 +901,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-4 rounded-2xl font-semibold hover:from-amber-600 hover:to-orange-600 focus:outline-none focus:ring-4 focus:ring-amber-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-500/25"
+                    className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-2.5 sm:py-3 rounded-lg font-semibold text-sm hover:from-amber-600 hover:to-orange-600 focus:outline-none focus:ring-4 focus:ring-amber-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-500/25"
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Envoi en cours...</span>
                       </>
                     ) : (
@@ -905,11 +914,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   </button>
                 </form>
 
-                <div className="mt-8 text-center">
+                <div className="mt-4 sm:mt-5 text-center">
                   <button
                     type="button"
                     onClick={() => switchView('login')}
-                    className="text-gray-500 hover:text-gray-700 text-sm hover:underline transition"
+                    className="text-gray-500 hover:text-gray-700 text-xs hover:underline transition"
                   >
                     ← Retour à la connexion
                   </button>
@@ -919,36 +928,36 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
 
             {/* ==================== RESET PASSWORD OTP VIEW ==================== */}
             {authView === 'reset-password-otp' && (
-              <div className="p-8 pt-10">
-                <div className="text-center mb-8">
+              <div className="p-4 pt-6 sm:p-5 sm:pt-7">
+                <div className="text-center mb-4 sm:mb-5">
                   <div className="relative inline-block">
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl blur-lg opacity-30 animate-pulse" />
-                    <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl shadow-lg">
-                      <Shield className="w-8 h-8 text-white" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl blur-lg opacity-30 animate-pulse" />
+                    <div className="relative inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg">
+                      <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
                   </div>
-                  <h2 className="mt-6 text-2xl font-bold text-gray-900">Vérification</h2>
-                  <p className="mt-2 text-gray-500">
+                  <h2 className="mt-2 sm:mt-3 text-lg sm:text-xl font-bold text-gray-900">Vérification</h2>
+                  <p className="mt-1 text-gray-500 text-xs sm:text-sm">
                     Code envoyé à <span className="text-amber-600 font-medium">{pendingEmail}</span>
                   </p>
                 </div>
 
                 {successMessage && (
-                  <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top-2">
-                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-green-700">{successMessage}</p>
+                  <div className="mb-3 p-2 sm:p-2.5 bg-green-50 border border-green-100 rounded-lg flex items-start gap-2 animate-in slide-in-from-top-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-green-700">{successMessage}</p>
                   </div>
                 )}
 
                 {error && (
-                  <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top-2">
-                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">{error}</p>
+                  <div className="mb-3 p-2 sm:p-2.5 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 animate-in slide-in-from-top-2">
+                    <AlertCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-700">{error}</p>
                   </div>
                 )}
 
-                <form onSubmit={handleVerifyResetOtp} className="space-y-6">
-                  <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>
+                <form onSubmit={handleVerifyResetOtp} className="space-y-4">
+                  <div className="flex justify-center gap-1.5 sm:gap-2" onPaste={handleOtpPaste}>
                     {otp.map((digit, index) => (
                       <input
                         key={index}
@@ -959,7 +968,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                         value={digit}
                         onChange={(e) => handleOtpChange(index, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        className="w-12 h-14 text-center text-xl font-bold bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all duration-200"
+                        className="w-9 h-11 sm:w-10 sm:h-12 text-center text-lg sm:text-xl font-bold bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all duration-200"
                         disabled={isLoading}
                       />
                     ))}
@@ -968,11 +977,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   <button
                     type="submit"
                     disabled={isLoading || otp.join('').length !== 6}
-                    className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-4 rounded-2xl font-semibold hover:from-amber-600 hover:to-orange-600 focus:outline-none focus:ring-4 focus:ring-amber-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-500/25"
+                    className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-2.5 sm:py-3 rounded-lg font-semibold text-sm hover:from-amber-600 hover:to-orange-600 focus:outline-none focus:ring-4 focus:ring-amber-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-500/25"
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Vérification...</span>
                       </>
                     ) : (
@@ -981,7 +990,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   </button>
 
                   <div className="text-center">
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-gray-500 text-xs">
                       Pas de code reçu ?{' '}
                       {resendCountdown > 0 ? (
                         <span className="text-gray-400 font-medium">Renvoyer dans {resendCountdown}s</span>
@@ -999,11 +1008,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   </div>
                 </form>
 
-                <div className="mt-6 text-center">
+                <div className="mt-3 sm:mt-4 text-center">
                   <button
                     type="button"
                     onClick={() => switchView('forgot-password')}
-                    className="text-gray-500 hover:text-gray-700 text-sm hover:underline transition"
+                    className="text-gray-500 hover:text-gray-700 text-xs hover:underline transition"
                   >
                     ← Modifier l'adresse email
                   </button>
@@ -1013,44 +1022,44 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
 
             {/* ==================== NEW PASSWORD VIEW ==================== */}
             {authView === 'new-password' && (
-              <div className="p-8 pt-10">
-                <div className="text-center mb-8">
+              <div className="p-4 pt-6 sm:p-5 sm:pt-7">
+                <div className="text-center mb-4 sm:mb-5">
                   <div className="relative inline-block">
-                    <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl blur-lg opacity-30 animate-pulse" />
-                    <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg">
-                      <Lock className="w-8 h-8 text-white" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl blur-lg opacity-30 animate-pulse" />
+                    <div className="relative inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg">
+                      <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
                   </div>
-                  <h2 className="mt-6 text-2xl font-bold text-gray-900">Nouveau mot de passe</h2>
-                  <p className="mt-2 text-gray-500">Créez un mot de passe sécurisé</p>
+                  <h2 className="mt-2 sm:mt-3 text-lg sm:text-xl font-bold text-gray-900">Nouveau mot de passe</h2>
+                  <p className="mt-1 text-gray-500 text-xs sm:text-sm">Créez un mot de passe sécurisé</p>
                 </div>
 
                 {successMessage && (
-                  <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top-2">
-                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-green-700">{successMessage}</p>
+                  <div className="mb-3 p-2 sm:p-2.5 bg-green-50 border border-green-100 rounded-lg flex items-start gap-2 animate-in slide-in-from-top-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-green-700">{successMessage}</p>
                   </div>
                 )}
 
                 {error && (
-                  <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top-2">
-                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">{error}</p>
+                  <div className="mb-3 p-2 sm:p-2.5 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 animate-in slide-in-from-top-2">
+                    <AlertCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-700">{error}</p>
                   </div>
                 )}
 
-                <form onSubmit={handleSetNewPassword} className="space-y-5">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Nouveau mot de passe</label>
+                <form onSubmit={handleSetNewPassword} className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-medium text-gray-700">Nouveau mot de passe</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Lock className="w-5 h-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                      <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                        <Lock className="w-3.5 h-3.5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
                       </div>
                       <input
                         type={showNewPassword ? 'text' : 'password'}
                         value={newPasswordData.newPassword}
                         onChange={(e) => setNewPasswordData({ ...newPasswordData, newPassword: e.target.value })}
-                        className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-200"
+                        className="w-full pl-8 pr-8 py-2 sm:py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/10 transition-all duration-200 text-sm"
                         placeholder="Minimum 8 caractères"
                         required
                         minLength={8}
@@ -1059,24 +1068,24 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                       <button
                         type="button"
                         onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-green-600 transition-colors"
+                        className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-green-600 transition-colors"
                       >
-                        {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showNewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       </button>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Confirmer le mot de passe</label>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-medium text-gray-700">Confirmer le mot de passe</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Lock className="w-5 h-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                      <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                        <Lock className="w-3.5 h-3.5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
                       </div>
                       <input
                         type={showConfirmPassword ? 'text' : 'password'}
                         value={newPasswordData.confirmPassword}
                         onChange={(e) => setNewPasswordData({ ...newPasswordData, confirmPassword: e.target.value })}
-                        className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-200"
+                        className="w-full pl-8 pr-8 py-2 sm:py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/10 transition-all duration-200 text-sm"
                         placeholder="Confirmez votre mot de passe"
                         required
                         disabled={isLoading}
@@ -1084,9 +1093,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-green-600 transition-colors"
+                        className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-green-600 transition-colors"
                       >
-                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       </button>
                     </div>
                   </div>
@@ -1094,15 +1103,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-2xl font-semibold hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-green-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-500/25"
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-2.5 sm:py-3 rounded-lg font-semibold text-sm hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-green-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-500/25"
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Réinitialisation...</span>
                       </>
                     ) : (
-                      <span>Réinitialiser le mot de passe</span>
+                      <span>Réinitialiser</span>
                     )}
                   </button>
                 </form>

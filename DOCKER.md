@@ -186,6 +186,61 @@ Les données sont automatiquement chargées au démarrage de Spring Boot grâce 
 docker compose restart backend
 ```
 
+## 🔐 Accès au Panel Administrateur
+
+Pour accéder au panel d'administration, vous devez avoir un compte avec le rôle `ADMIN`.
+
+### Créer un compte administrateur
+
+1. **Via SQL (recommandé pour le premier admin)**
+
+```bash
+# Se connecter au conteneur MySQL
+docker exec -it cameroun-tour-mysql mysql -u cameroun_user -pcameroun_password cameroun_db
+
+# Mettre à jour le rôle d'un utilisateur existant
+UPDATE voyageur SET role = 'ADMIN' WHERE email = 'votre.email@example.com';
+```
+
+2. **Via l'API (si vous êtes déjà admin)**
+
+```bash
+curl -X PUT http://localhost:8080/api/admin/users/{publicId}/role?role=ADMIN \
+  -H "Cookie: access_token=votre_token"
+```
+
+### Accéder au panel
+
+1. Connectez-vous avec votre compte admin sur http://localhost:5173
+2. Une icône 🛡️ (bouclier) apparaît dans le header
+3. Cliquez dessus pour accéder au dashboard admin
+
+### Fonctionnalités du panel admin
+
+- **Dashboard** : Statistiques globales (utilisateurs, établissements, avis)
+- **Utilisateurs** : Recherche, modification, verrouillage, suppression
+- **Établissements** : Création, modification, suppression
+- **Avis** : Modération et suppression
+
+## 🏢 Accès au Panel Établissement
+
+Les utilisateurs avec le rôle `ETABLISSEMENT` peuvent gérer leurs établissements.
+
+### Devenir propriétaire d'établissement
+
+```bash
+# Via SQL
+docker exec -it cameroun-tour-mysql mysql -u cameroun_user -pcameroun_password cameroun_db
+
+UPDATE voyageur SET role = 'ETABLISSEMENT' WHERE email = 'proprietaire@example.com';
+```
+
+### Accéder au panel
+
+1. Connectez-vous avec un compte ETABLISSEMENT
+2. Une icône 🏢 (bâtiment) apparaît dans le header
+3. Cliquez dessus pour gérer vos établissements
+
 ### Réinitialiser complètement
 
 ```bash

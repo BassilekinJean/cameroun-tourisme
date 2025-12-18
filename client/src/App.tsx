@@ -20,14 +20,16 @@ import DetailsPage, { DetailsItem } from './components/DetailsPage';
 import AboutPage from './components/AboutPage';
 import ContactPage from './components/ContactPage';
 import SearchResultsPage from './components/SearchResultsPage';
+import AdminDashboard from './components/AdminDashboard';
+import EtablissementPanel from './components/EtablissementPanel';
 import { Review } from './components/ReviewSection';
 import { checkAuth, logout as apiLogout } from './api/authService';
-import type { User } from './api/types';
+import type { User, Role } from './api/types';
 
 // Ré-exporter le type User pour les composants qui l'importent depuis App.tsx
 export type { User } from './api/types';
 
-type PageType = 'home' | 'destination' | 'activities' | 'profile' | 'write-review' | 'share-tip' | 'publish-photos' | 'add-place' | 'details' | 'about' | 'contact' | 'search';
+type PageType = 'home' | 'destination' | 'activities' | 'profile' | 'write-review' | 'share-tip' | 'publish-photos' | 'add-place' | 'details' | 'about' | 'contact' | 'search' | 'admin' | 'etablissement-panel';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -304,6 +306,38 @@ export default function App() {
     setCurrentPage('search');
   };
 
+  const handleGoToAdmin = () => {
+    if (currentUser?.role === 'ADMIN') {
+      setCurrentPage('admin');
+    }
+  };
+
+  const handleGoToEtablissementPanel = () => {
+    if (currentUser?.role === 'ETABLISSEMENT' || currentUser?.role === 'ADMIN') {
+      setCurrentPage('etablissement-panel');
+    }
+  };
+
+  // Si on est sur le panneau admin, ne pas afficher le header/footer standard
+  if (currentPage === 'admin' && currentUser?.role === 'ADMIN') {
+    return (
+      <AdminDashboard
+        currentUser={currentUser}
+        onBack={handleBackToHome}
+      />
+    );
+  }
+
+  // Si on est sur le panneau établissement
+  if (currentPage === 'etablissement-panel' && (currentUser?.role === 'ETABLISSEMENT' || currentUser?.role === 'ADMIN')) {
+    return (
+      <EtablissementPanel
+        currentUser={currentUser}
+        onBack={handleBackToHome}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen">
       <Header 
@@ -322,6 +356,8 @@ export default function App() {
         onContactPage={handleContactPage}
         currentPage={currentPage}
         onSearch={handleSearch}
+        onGoToAdmin={handleGoToAdmin}
+        onGoToEtablissementPanel={handleGoToEtablissementPanel}
       />
       
       {currentPage === 'home' && (

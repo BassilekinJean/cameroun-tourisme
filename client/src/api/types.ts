@@ -217,6 +217,19 @@ export interface PageResponse<T> {
   size: number;
   number: number;
   empty: boolean;
+  // HATEOAS format support
+  _embedded?: {
+    voyageurResponseList?: T[];
+    etablissementResponseList?: T[];
+    avisResponseList?: T[];
+    [key: string]: T[] | undefined;
+  };
+  page?: {
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+  };
 }
 
 // ==================== RECHERCHE ====================
@@ -349,3 +362,70 @@ export const VILLES_CAMEROUN = [
 
 export type RegionCameroun = typeof REGIONS_CAMEROUN[number];
 export type VilleCameroun = typeof VILLES_CAMEROUN[number];
+
+// ==================== ADMINISTRATION ====================
+
+export interface AdminStats {
+  totalUsers: number;
+  totalEtablissements: number;
+  totalAvis: number;
+  totalHotels: number;
+  totalRestaurants: number;
+  totalSitesTouristiques: number;
+}
+
+export interface AdminUpdateUserData {
+  nomComplet?: string;
+  email?: string;
+  paysOrigine?: string;
+  role?: string;
+}
+
+export interface AdminUpdateEtablissementData {
+  nom?: string;
+  description?: string;
+  email?: string;
+  telephone?: string;
+  photoProfile?: string;
+  adresse?: string;
+  ville?: string;
+  images?: string[];
+  categorie?: TypeLieu;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface AdminCreateEtablissementData {
+  nom: string;
+  description: string;
+  email: string;
+  password: string;
+  telephone: string;
+  photoProfile?: string;
+  adresse?: string;
+  ville: string;
+  images: string[];
+  categorie: TypeLieu;
+  latitude?: number;
+  longitude?: number;
+}
+
+// ==================== PANEL ÉTABLISSEMENT ====================
+
+export interface EtablissementPanelStats {
+  totalAvis: number;
+  nombreFavoris: number;
+  noteMoyenne: number;
+  etablissementId: string;
+  nom: string;
+}
+
+export interface EtablissementUpdateData {
+  description?: string;
+  telephone?: string;
+  photoProfile?: string;
+  adresse?: string;
+  images?: string[];
+  latitude?: number;
+  longitude?: number;
+}

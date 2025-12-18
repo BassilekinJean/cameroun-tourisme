@@ -28,6 +28,7 @@ public class VoyageurAssembler extends RepresentationModelAssemblerSupport<Utili
         model.setPaysOrigine(entity.getPaysOrigine());
         model.setPhotoProfile(entity.getPhotoProfile());
         model.setFavorisIds(entity.getFavorisIds());
+        model.setRole(entity.getRole());
 
 
         model.add(linkTo(methodOn(UtilisateurController.class).getProfileWithId(entity.getPublicId())).withSelfRel());

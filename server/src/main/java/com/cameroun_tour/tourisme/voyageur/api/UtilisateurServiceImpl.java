@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,6 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.cameroun_tour.tourisme.common.contracts.AdminUpdateUserRequest;
+import com.cameroun_tour.tourisme.common.contracts.AdminUserDto;
+import com.cameroun_tour.tourisme.common.utils.enums.Role;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurService;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 import com.cameroun_tour.tourisme.voyageur.errors.UserNotFoundException;
@@ -191,4 +195,123 @@ public class UtilisateurServiceImpl implements UtilisateurService {
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'id : " + id));
     }
 
+    // ==================== MÉTHODES ADMIN ====================
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countAll() {
+        return userRepository.count();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AdminUserDto> searchUsersForAdmin(int page, int size, String sort, String sortDir, String search) {
+        Sort sortOrder = sortDir.equalsIgnoreCase("asc") 
+            ? Sort.by(sort).ascending() 
+            : Sort.by(sort).descending();
+        
+        PageRequest pageable = PageRequest.of(page, size, sortOrder);
+        
+        Page<UtilisateurEntity> users;
+        if (search != null && !search.isBlank()) {
+            users = userRepository.searchUsers(search, pageable);
+        } else {
+            users = userRepository.findAll(pageable);
+        }
+        
+        return users.map(this::toAdminUserDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminUserDto getUserByPublicIdForAdmin(UUID publicId) {
+        UtilisateurEntity user = userRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'ID: " + publicId));
+        return toAdminUserDto(user);
+    }
+
+    @Override
+    @Transactional
+    public AdminUserDto updateUserForAdmin(UUID publicId, AdminUpdateUserRequest request) {
+        UtilisateurEntity user = userRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'ID: " + publicId));
+        
+        if (request.nomComplet() != null) {
+            user.setNomComplet(request.nomComplet());
+        }
+        if (request.email() != null) {
+            user.setUserEmail(request.email());
+        }
+        if (request.paysOrigine() != null) {
+            user.setPaysOrigine(request.paysOrigine());
+        }
+        if (request.role() != null) {
+            user.setRole(request.role());
+        }
+        
+        UtilisateurEntity saved = userRepository.save(user);
+        return toAdminUserDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public AdminUserDto updateUserRole(UUID publicId, Role role) {
+        UtilisateurEntity user = userRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'ID: " + publicId));
+        user.setRole(role);
+        UtilisateurEntity saved = userRepository.save(user);
+        return toAdminUserDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public boolean toggleUserLock(UUID publicId) {
+        UtilisateurEntity user = userRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'ID: " + publicId));
+        boolean newLockState = !user.isAccountLocked();
+        user.setAccountLocked(newLockState);
+        userRepository.save(user);
+        return newLockState;
+    }
+
+    @Override
+    @Transactional
+    public void deleteUserByPublicId(UUID publicId) {
+        UtilisateurEntity user = userRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'ID: " + publicId));
+        userRepository.delete(user);
+    }
+
+    @Override
+    @Transactional
+    public int deleteUsersBatch(List<UUID> userIds) {
+        int deleted = 0;
+        for (UUID id : userIds) {
+            try {
+                deleteUserByPublicId(id);
+                deleted++;
+            } catch (Exception e) {
+                // Log et continuer
+            }
+        }
+        return deleted;
+    }
+
+    /**
+     * Convertit une entité UtilisateurEntity en AdminUserDto
+     */
+    private AdminUserDto toAdminUserDto(UtilisateurEntity user) {
+        return AdminUserDto.builder()
+                .publicId(user.getPublicId())
+                .nomComplet(user.getNomComplet())
+                .email(user.getUserEmail())
+                .paysOrigine(user.getPaysOrigine())
+                .photoProfile(user.getPhotoProfile())
+                .favorisIds(user.getFavorisIds())
+                .role(user.getRole())
+                .accountLocked(user.isAccountLocked())
+                .emailVerified(false) // Champ non implémenté actuellement
+                .dateCreation(user.getDateCreation())
+                .build();
+    }
 }

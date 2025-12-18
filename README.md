@@ -174,6 +174,28 @@ L'application démarre sur `http://localhost:5173`
 | GET | `/images/{filename}` | Télécharger une image |
 | GET | `/etablissement/{etablissementId}` | Images d'un établissement |
 
+### Administration (`/api/admin`) 🔐
+
+> ⚠️ Tous les endpoints nécessitent le rôle `ADMIN`
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/stats` | Statistiques globales du dashboard |
+| GET | `/users` | Liste paginée des utilisateurs |
+| GET | `/users/{publicId}` | Détails d'un utilisateur |
+| PUT | `/users/{publicId}` | Modifier un utilisateur |
+| PUT | `/users/{publicId}/role` | Modifier le rôle d'un utilisateur |
+| PUT | `/users/{publicId}/toggle-lock` | Verrouiller/Déverrouiller un compte |
+| DELETE | `/users/{publicId}` | Supprimer un utilisateur |
+| DELETE | `/users/batch` | Supprimer plusieurs utilisateurs |
+| GET | `/etablissements` | Liste paginée des établissements |
+| POST | `/etablissements` | Créer un établissement |
+| PUT | `/etablissements/{publicId}` | Modifier un établissement |
+| DELETE | `/etablissements/{publicId}` | Supprimer un établissement |
+| GET | `/avis` | Liste paginée des avis |
+| DELETE | `/avis/{publicId}` | Supprimer un avis |
+| DELETE | `/avis/batch` | Supprimer plusieurs avis |
+
 ## 🏗️ Architecture
 
 ### Backend - Spring Modulith
@@ -186,7 +208,8 @@ com.cameroun_tour.tourisme/
 ├── etablissement/      # Gestion des établissements
 ├── Avis/              # Gestion des avis
 ├── media/             # Gestion des médias
-└── common/            # Composants partagés (DTOs, exceptions)
+├── admin/             # Panel d'administration (ADMIN uniquement)
+└── common/            # Composants partagés (DTOs, exceptions, contracts)
 ```
 
 Chaque module est indépendant avec :
@@ -202,13 +225,50 @@ Le frontend utilise une architecture composants :
 ```
 src/
 ├── api/              # Services API (Axios)
+│   ├── adminService.ts          # API admin (gestion utilisateurs, établissements, avis)
+│   └── etablissementPanelService.ts  # API panel propriétaire
 ├── components/       # Composants React
-│   ├── ui/          # Composants UI réutilisables
-│   └── figma/       # Composants design system
+│   ├── ui/          # Composants UI réutilisables (shadcn)
+│   ├── figma/       # Composants design system
+│   ├── AdminDashboard.tsx       # Dashboard administrateur
+│   ├── UserManagement.tsx       # Gestion des utilisateurs
+│   ├── EtablissementManagement.tsx  # Gestion des établissements
+│   ├── AvisManagement.tsx       # Gestion des avis
+│   └── EtablissementPanel.tsx   # Panel propriétaire
 └── styles/          # CSS global
 ```
 
 ## 🔐 Sécurité
+
+### Rôles et Permissions
+
+L'application utilise trois rôles avec des permissions différentes :
+
+| Rôle | Description | Accès |
+|------|-------------|-------|
+| `USER` | Utilisateur standard | Consultation, avis, favoris |
+| `ETABLISSEMENT` | Propriétaire d'établissement | + Gestion de ses établissements |
+| `ADMIN` | Administrateur | + Panel admin complet |
+
+### Panel Administrateur (ADMIN)
+
+Le panel admin permet de :
+- 📊 Voir les statistiques globales (utilisateurs, établissements, avis)
+- 👥 Gérer les utilisateurs (modifier, verrouiller, supprimer, changer le rôle)
+- 🏨 Gérer les établissements (créer, modifier, supprimer)
+- ⭐ Modérer les avis (supprimer les avis inappropriés)
+
+**Accès :** Cliquer sur l'icône 🛡️ (bouclier) dans le header après connexion avec un compte ADMIN.
+
+### Panel Établissement (ETABLISSEMENT)
+
+Le panel établissement permet aux propriétaires de :
+- 📋 Voir leurs établissements
+- ✏️ Modifier les informations
+- 📸 Gérer les photos
+- 💬 Répondre aux avis
+
+**Accès :** Cliquer sur l'icône 🏢 (bâtiment) dans le header après connexion avec un compte ETABLISSEMENT.
 
 ### JWT avec HttpOnly Cookies
 
@@ -242,7 +302,7 @@ Voyageur
 ├── password (String, hashé)
 ├── paysOrigine (String)
 ├── photoProfile (String)
-└── role (VOYAGEUR, PROPRIETAIRE, ADMIN)
+└── role (USER, ETABLISSEMENT, ADMIN)
 
 Etablissement
 ├── id (Long, interne)

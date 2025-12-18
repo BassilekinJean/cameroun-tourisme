@@ -56,3 +56,31 @@ export {
   deleteAvis,
   toggleAvisLike,
 } from './avisService';
+
+// Services Admin
+export {
+  getAdminStats,
+  getAllUsers as getAllUsersAdmin,
+  getUserById,
+  updateUser,
+  updateUserRole,
+  toggleUserLock,
+  deleteUser,
+  deleteUsersBatch,
+  getAllEtablissementsAdmin,
+  createEtablissement,
+  updateEtablissement,
+  deleteEtablissement,
+  getAllAvisAdmin,
+  deleteAvisAdmin,
+  deleteAvisBatch,
+} from './adminService';
+
+// Services Panel Établissement
+export {
+  getMyEtablissement,
+  getEtablissementStats,
+  updateMyEtablissement,
+  getMyEtablissementAvis,
+  reportAvis,
+} from './etablissementPanelService';

@@ -1,5 +1,6 @@
 package com.cameroun_tour.tourisme.Avis.api;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.context.event.EventListener;
@@ -12,6 +13,7 @@ import com.cameroun_tour.tourisme.Avis.Avis;
 import com.cameroun_tour.tourisme.Avis.AvisServiceApi;
 import com.cameroun_tour.tourisme.Avis.errors.CommentNotFoundException;
 import com.cameroun_tour.tourisme.Avis.model.AvisDto;
+import com.cameroun_tour.tourisme.common.contracts.AdminAvisDto;
 import com.cameroun_tour.tourisme.common.events.AvisPublieEvent;
 import com.cameroun_tour.tourisme.etablissement.EtablissementServiceApi;
 import com.cameroun_tour.tourisme.etablissement.Etablissement;
@@ -148,5 +150,71 @@ public class AviserviceImpl implements AvisServiceApi {
 
         // 4. Sauvegarder
         avisRepository.save(avis);
+    }
+
+    // ==================== MÉTHODES ADMIN ====================
+
+    @Override
+    public long countAll() {
+        return avisRepository.count();
+    }
+
+    @Override
+    public Page<AdminAvisDto> searchAvisForAdmin(int page, int size, String sort, String sortDir, String search) {
+        Sort sortOrder = sortDir.equalsIgnoreCase("asc") 
+            ? Sort.by(sort).ascending() 
+            : Sort.by(sort).descending();
+        
+        PageRequest pageable = PageRequest.of(page, size, sortOrder);
+        
+        Page<Avis> avisPage;
+        if (search != null && !search.isBlank()) {
+            avisPage = avisRepository.searchAvis(search, pageable);
+        } else {
+            avisPage = avisRepository.findAll(pageable);
+        }
+        
+        return avisPage.map(this::toAdminAvisDto);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAvisByPublicId(UUID publicId) {
+        Avis avis = avisRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new EntityNotFoundException("Avis non trouvé avec l'ID: " + publicId));
+        avisRepository.delete(avis);
+    }
+
+    @Override
+    @Transactional
+    public int deleteAvisBatch(List<UUID> avisIds) {
+        int deleted = 0;
+        for (UUID id : avisIds) {
+            try {
+                deleteAvisByPublicId(id);
+                deleted++;
+            } catch (Exception e) {
+                // Log et continuer
+            }
+        }
+        return deleted;
+    }
+
+    /**
+     * Convertit une entité Avis en AdminAvisDto
+     */
+    private AdminAvisDto toAdminAvisDto(Avis avis) {
+        return AdminAvisDto.builder()
+                .publicId(avis.getPublicId())
+                .message(avis.getMessage())
+                .note(avis.getNote())
+                .dateCreation(avis.getDateCreation())
+                .nombreLikes(avis.getNombreLikes())
+                .auteurId(avis.getAuteur() != null ? avis.getAuteur().getPublicId() : null)
+                .auteurNom(avis.getAuteur() != null ? avis.getAuteur().getNomComplet() : null)
+                .auteurEmail(avis.getAuteur() != null ? avis.getAuteur().getUserEmail() : null)
+                .etablissementId(avis.getLieuConcerne() != null ? avis.getLieuConcerne().getPublicId() : null)
+                .etablissementNom(avis.getLieuConcerne() != null ? avis.getLieuConcerne().getNom() : null)
+                .build();
     }
 }
