@@ -1,0 +1,151 @@
+# ================================================================
+# Docker Compose - Cameroun Tourisme
+# Services: Frontend, Backend, MySQL, Redis, MailHog
+# ================================================================
+
+services:
+  # ================================================================
+  # Base de données MySQL
+  # ================================================================
+  mysql:
+    image: mysql:8.0
+    container_name: cameroun-tour-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-cameroun_tour}
+      MYSQL_USER: ${MYSQL_USER:-cameroun_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-cameroun_password}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - cameroun-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ================================================================
+  # Redis Cache
+  # ================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: cameroun-tour-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - cameroun-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+
+  # ================================================================
+  # MailHog - Serveur SMTP de test
+  # ================================================================
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: cameroun-tour-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Interface Web
+    networks:
+      - cameroun-network
+
+  # ================================================================
+  # Backend Spring Boot
+  # ================================================================
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: cameroun-tour-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      # Database
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-cameroun_tour}
+      DB_USER: ${MYSQL_USER:-cameroun_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-cameroun_password}
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # Mail (MailHog)
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      # JWT
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-kND+eAUJfgU5MGloND8N+42TjjMfVL+DOGdXgk1dLWv24ZCXUcUYSEtz1ZdCxjO6vO3MoEGKxQER72GDoqHvdA==}
+      # OAuth2
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-your_google_client_id}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-your_google_client_secret}
+      # Frontend URL
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - cameroun-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ================================================================
+  # Frontend React/Vite avec Nginx
+  # ================================================================
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+    container_name: cameroun-tour-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    networks:
+      - cameroun-network
+    depends_on:
+      backend:
+        condition: service_healthy
+
+# ================================================================
+# Volumes persistants
+# ================================================================
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+# ================================================================
+# Réseau Docker
+# ================================================================
+networks:
+  cameroun-network:
+    driver: bridge

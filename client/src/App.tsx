@@ -43,6 +43,21 @@ export default function App() {
   useEffect(() => {
     const initAuth = async () => {
       try {
+        // Gérer le callback OAuth2 si on est sur /auth/callback
+        const currentPath = window.location.pathname;
+        if (currentPath === '/auth/callback') {
+          // Après OAuth2, les cookies HttpOnly sont déjà définis par le backend
+          // On récupère l'utilisateur et on nettoie l'URL
+          const user = await checkAuth();
+          if (user) {
+            setCurrentUser(user);
+            localStorage.setItem('camertrip_user', JSON.stringify(user));
+          }
+          // Nettoyer l'URL pour revenir à la racine
+          window.history.replaceState({}, document.title, '/');
+          return;
+        }
+
         // D'abord essayer de récupérer l'utilisateur depuis le serveur
         const user = await checkAuth();
         if (user) {
@@ -314,7 +329,7 @@ export default function App() {
           <Hero onSearch={handleSearch} />
           <FeaturedBanner onLearnMore={handleAboutPage} />
           <ActivitiesSection onCategoryClick={handleActivityCategoryClick} />
-          <DestinationsGrid />
+          <DestinationsGrid onShowDetails={handleDetailsPage} />
           <HotelsSection onShowDetails={handleDetailsPage} />
           <TravellersChoice />
           <Newsletter />

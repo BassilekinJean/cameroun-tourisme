@@ -1,5 +1,6 @@
 package com.cameroun_tour.tourisme.etablissement.model;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.cameroun_tour.tourisme.common.utils.enums.TypeLieu;
@@ -24,7 +25,9 @@ public class EtablissementListItem {
     private String description;
     private String ville;
     private String photoProfile;
+    private List<String> images;
     private TypeLieu categorie;
+    private int nombreFavoris;
     private int nombreAvis;
     private Double rating;
 
@@ -38,7 +41,9 @@ public class EtablissementListItem {
                 .description(etablissement.getDescription())
                 .ville(etablissement.getVille())
                 .photoProfile(etablissement.getPhotoProfile())
+                .images(etablissement.getImages())
                 .categorie(etablissement.getCategorie())
+                .nombreFavoris(etablissement.getNombreFavoris())
                 .nombreAvis(etablissement.getNombreFavoris())
                 .build();
     }

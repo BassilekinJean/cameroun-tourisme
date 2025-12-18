@@ -142,7 +142,9 @@ export interface EtablissementListItem {
   description: string;
   ville: string;
   photoProfile?: string;
+  images?: string[];
   categorie: TypeLieu;
+  nombreFavoris: number;
   nombreAvis: number;
   rating?: number;
 }
