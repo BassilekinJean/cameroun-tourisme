@@ -389,32 +389,20 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto">
-      {/* Animated Background */}
+      {/* Fond flouté */}
       <div 
-        className="absolute inset-0 bg-gradient-to-br from-slate-900 via-green-950 to-slate-900"
+        className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={() => {
           resetAllForms();
           setAuthView('login');
           onClose();
         }}
-      >
-        {/* Animated gradient orbs */}
-        <FloatingOrb className="w-96 h-96 bg-green-500/20 -top-48 -left-48" />
-        <FloatingOrb className="w-80 h-80 bg-yellow-500/15 top-1/4 -right-40 animation-delay-2000" />
-        <FloatingOrb className="w-64 h-64 bg-red-500/10 bottom-0 left-1/4 animation-delay-4000" />
-        <FloatingOrb className="w-72 h-72 bg-emerald-500/15 -bottom-36 right-1/4 animation-delay-1000" />
-        
-        {/* Grid pattern overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
-        
-        {/* Radial gradient spotlight */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
-      </div>
+      />
       
       {/* Modal Container */}
       <div className="relative w-full max-w-sm mx-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        {/* Glow effect behind card */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 rounded-3xl blur-xl opacity-30 animate-pulse" />
+        {/* Subtle shadow glow */}
+        <div className="absolute -inset-1 bg-white/10 rounded-3xl blur-xl" />
         
         {/* Main Card */}
         <div className="relative bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden">
