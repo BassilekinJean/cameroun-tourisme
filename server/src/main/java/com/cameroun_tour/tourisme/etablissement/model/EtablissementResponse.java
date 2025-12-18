@@ -37,12 +37,16 @@ public class EtablissementResponse extends RepresentationModel<EtablissementResp
     private int nombreAvis;
     private Double rating;
     private String dateInscription;
+    
+    // Localisation GPS
+    private Double latitude;
+    private Double longitude;
 
     /**
      * Crée un EtablissementResponse à partir d'une entité Etablissement
      */
     public static EtablissementResponse fromEntity(com.cameroun_tour.tourisme.etablissement.Etablissement etablissement) {
-        return EtablissementResponse.builder()
+        var builder = EtablissementResponse.builder()
                 .publicId(etablissement.getPublicId())
                 .nom(etablissement.getNom())
                 .description(etablissement.getDescription())
@@ -56,7 +60,14 @@ public class EtablissementResponse extends RepresentationModel<EtablissementResp
                 .nombreAvis(etablissement.getNombreFavoris()) // Note: nombreFavoris utilisé comme nombreAvis
                 .dateInscription(etablissement.getCreatedAt() != null 
                     ? etablissement.getCreatedAt().toLocalDate().toString() 
-                    : null)
-                .build();
+                    : null);
+        
+        // Ajouter la localisation si présente
+        if (etablissement.getLocalisation() != null) {
+            builder.latitude(etablissement.getLocalisation().getLatitude())
+                   .longitude(etablissement.getLocalisation().getLongitude());
+        }
+        
+        return builder.build();
     }
 }

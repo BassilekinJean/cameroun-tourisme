@@ -47,7 +47,11 @@ public record LieuRegistrationDto(
     List<String> images,
 
     @Enumerated(EnumType.STRING)
-    TypeLieu categorie
+    TypeLieu categorie,
+
+    // Localisation GPS (optionnelle)
+    Double latitude,
+    Double longitude
 
 ) {
 

@@ -52,6 +52,11 @@ public class EtablissementServiceImpl implements EtablissementServiceApi {
         etablissement.setVille(dto.ville());
         etablissement.setImages(dto.images());
         etablissement.setCategorie(dto.categorie());
+        
+        // Ajouter la localisation si fournie
+        if (dto.latitude() != null && dto.longitude() != null) {
+            etablissement.setLocalisation(new Etablissement.Localisation(dto.latitude(), dto.longitude()));
+        }
 
         etablissementRepository.save(etablissement);
     }

@@ -79,6 +79,14 @@ export interface UserUpdateData {
 // ==================== ETABLISSEMENT ====================
 
 /**
+ * Localisation GPS pour Google Maps
+ */
+export interface Localisation {
+  latitude: number;
+  longitude: number;
+}
+
+/**
  * Correspond à l'entité Etablissement du backend
  */
 export interface Etablissement {
@@ -95,6 +103,9 @@ export interface Etablissement {
   categorie: TypeLieu;
   nombreAvis: number;
   dateInscription: string;
+  // Localisation GPS
+  latitude?: number;
+  longitude?: number;
   // Champs calculés/additionnels pour le frontend
   rating?: number;
   price?: string;
@@ -118,6 +129,8 @@ export interface EtablissementRegistrationData {
   ville: string;
   images: string[];
   categorie: TypeLieu;
+  latitude?: number;
+  longitude?: number;
 }
 
 /**

@@ -64,6 +64,32 @@ export const updateProfile = async (data: UserUpdateData): Promise<ApiResponse<U
 };
 
 /**
+ * Mettre à jour la photo de profil utilisateur
+ */
+export const updateProfilePhoto = async (file: File): Promise<ApiResponse<{ url: string }>> => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await apiClient.post<{ url: string }>(`${USER_BASE}/photo`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return {
+      success: true,
+      data: response.data,
+      message: 'Photo de profil mise à jour avec succès',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: getErrorMessage(error),
+    };
+  }
+};
+
+/**
  * Ajouter/Retirer un établissement des favoris
  */
 export const toggleFavori = async (etablissementId: string): Promise<ApiResponse<void>> => {
@@ -106,10 +132,59 @@ export const getAllUsers = async (
   }
 };
 
+/**
+ * Envoyer un code OTP pour le changement de mot de passe
+ */
+export const sendPasswordChangeOtp = async (): Promise<ApiResponse<{ message: string; email: string }>> => {
+  try {
+    const response = await apiClient.post<{ message: string; email: string }>(`${USER_BASE}/send-password-change-otp`);
+    return {
+      success: true,
+      data: response.data,
+      message: response.data.message,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: getErrorMessage(error),
+    };
+  }
+};
+
+/**
+ * Changer le mot de passe avec vérification OTP
+ */
+export const changePasswordWithOtp = async (
+  newPassword: string,
+  validatePassword: string,
+  otp: string
+): Promise<ApiResponse<{ message: string }>> => {
+  try {
+    const response = await apiClient.post<{ message: string }>(
+      `${USER_BASE}/change-password`,
+      { newPassword, validatePassword },
+      { params: { otp } }
+    );
+    return {
+      success: true,
+      data: response.data,
+      message: response.data.message,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: getErrorMessage(error),
+    };
+  }
+};
+
 export default {
   getMyProfile,
   getUserProfile,
   updateProfile,
+  updateProfilePhoto,
   toggleFavori,
   getAllUsers,
+  sendPasswordChangeOtp,
+  changePasswordWithOtp,
 };

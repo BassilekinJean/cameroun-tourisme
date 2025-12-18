@@ -53,7 +53,9 @@ public class EtablissementServiceTest {
             "Centre ville",
             "Yaoundé",
             List.of("image1.jpg", "image2.jpg"),
-            TypeLieu.HOTEL
+            TypeLieu.HOTEL,
+            3.848,
+            11.502
         );
     }
 
@@ -85,7 +87,9 @@ public class EtablissementServiceTest {
             "Centre ville",
             "Yaoundé",
             List.of("image1.jpg"),
-            TypeLieu.HOTEL
+            TypeLieu.HOTEL,
+            3.848,
+            11.502
         );
 
         // Act & Assert

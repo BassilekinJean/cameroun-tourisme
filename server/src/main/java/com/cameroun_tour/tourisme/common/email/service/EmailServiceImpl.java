@@ -70,4 +70,9 @@ public class EmailServiceImpl implements EmailServiceApi {
             otpService.saveOtp(email, otpCode);
         }
     }
+
+    @Override
+    public boolean verifyOtp(String email, String otp) {
+        return ((EmailServiceApi) otpService).verifyOtp(email, otp);
+    }
 }

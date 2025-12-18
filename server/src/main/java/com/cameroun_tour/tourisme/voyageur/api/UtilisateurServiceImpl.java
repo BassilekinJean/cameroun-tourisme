@@ -2,6 +2,10 @@ package com.cameroun_tour.tourisme.voyageur.api;
 
 import static java.util.Objects.requireNonNull;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -9,8 +13,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.cameroun_tour.tourisme.voyageur.UtilisateurService;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
@@ -29,6 +35,9 @@ public class UtilisateurServiceImpl implements UtilisateurService {
 
     private final UtilisateurRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final PasswordEncoder passwordEncoder;
+    
+    private static final String UPLOAD_DIR = "uploads/profiles";
 
 
     @Override
@@ -103,9 +112,50 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         UtilisateurEntity user = userRepository.findByUserEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("L'utilisateur avec l'email " + email + " est introuvable"));
 
-        user.setUserPassword(userPasswordDto.validatePassword());
+        user.setUserPassword(passwordEncoder.encode(userPasswordDto.validatePassword()));
         
         userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void updatePassword(String email, String newPassword) {
+        UtilisateurEntity user = userRepository.findByUserEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("L'utilisateur avec l'email " + email + " est introuvable"));
+
+        user.setUserPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public String updateProfilePhoto(String email, MultipartFile file) throws Exception {
+        UtilisateurEntity user = userRepository.findByUserEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé"));
+
+        // Créer le répertoire d'upload s'il n'existe pas
+        Path uploadPath = Paths.get(UPLOAD_DIR);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        // Générer un nom de fichier unique
+        String originalFilename = file.getOriginalFilename();
+        String extension = originalFilename != null && originalFilename.contains(".") 
+            ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
+            : ".jpg";
+        String filename = user.getPublicId() + "_" + System.currentTimeMillis() + extension;
+
+        // Sauvegarder le fichier
+        Path filePath = uploadPath.resolve(filename);
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+        // Mettre à jour l'utilisateur avec l'URL de la photo
+        String photoUrl = "/api/media/profiles/" + filename;
+        user.setPhotoProfile(photoUrl);
+        userRepository.save(user);
+
+        return photoUrl;
     }
 
     @Transactional

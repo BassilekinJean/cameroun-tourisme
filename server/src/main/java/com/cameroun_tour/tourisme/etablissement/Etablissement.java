@@ -11,6 +11,8 @@ import com.cameroun_tour.tourisme.common.utils.enums.TypeLieu;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -25,7 +27,6 @@ import lombok.Data;
 @Data
 @Entity
 public class Etablissement {
-
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -62,12 +63,15 @@ public class Etablissement {
     @NotNull(message = "Vous de devez ajouter au moins 1 image des Lieux")
     private List<String> images;
 
-
     @Enumerated(EnumType.STRING)
     private TypeLieu categorie;
 
     @Column(nullable = false)
     private int nombreFavoris = 0;
+
+    // Localisation GPS pour Google Maps
+    @Embedded
+    private Localisation localisation;
 
     @CurrentTimestamp
     @Column(updatable = false)
@@ -76,4 +80,17 @@ public class Etablissement {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Data
+    @Embeddable
+    public static class Localisation {
+        private Double latitude;
+        private Double longitude;
+        
+        public Localisation() {}
+        
+        public Localisation(Double latitude, Double longitude) {
+            this.latitude = latitude;
+            this.longitude = longitude;
+        }
+    }
 }

@@ -389,14 +389,6 @@ export default function DestinationPage({ destination, onBackToHome, currentUser
                     Détails
                   </button>
                 </div>
-                {currentUser && (
-                  <button
-                    onClick={() => handleAddReviewClick(place)}
-                    className="mt-2 px-4 bg-gray-100 text-gray-700 py-2.5 rounded-lg hover:bg-gray-200 transition-colors duration-200"
-                  >
-                    Ajouter une évaluation
-                  </button>
-                )}
               </div>
             </div>
           ))}
