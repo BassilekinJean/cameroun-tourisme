@@ -75,7 +75,7 @@ export default function HotelsSection({ onShowDetails }: HotelsSectionProps) {
         type: 'hotel',
         description: hotel.description,
         location: hotel.ville,
-        rating: hotel.nombreFavoris,
+        rating: hotel.rating || 0,
         image: hotel.photoProfile || (hotel.images && hotel.images[0]),
         category: 'Hôtel'
       });

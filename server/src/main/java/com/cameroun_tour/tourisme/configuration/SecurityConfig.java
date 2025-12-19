@@ -79,6 +79,15 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             
+            // Important: Retourner 401 au lieu de rediriger vers OAuth pour les API
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setContentType("application/json");
+                    response.setStatus(401);
+                    response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Vous devez être connecté pour effectuer cette action\"}");
+                })
+            )
+            
             .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class)
             .oauth2Login(oauth2 -> { 
                 Oauth2AuthenticationSuccessHandler handler = oAuth2SuccessHandlerProvider.getIfAvailable();

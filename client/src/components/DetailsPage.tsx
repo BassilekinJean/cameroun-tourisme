@@ -46,6 +46,7 @@ interface DetailsPageProps {
   reviews: Review[];
   onAddReview: (placeId: string, placeName: string, rating: number, comment: string) => void;
   onOpenAuthModal?: () => void;
+  onUpdateUser?: (user: User) => void;
 }
 
 export default function DetailsPage({ 
@@ -54,7 +55,8 @@ export default function DetailsPage({
   currentUser, 
   reviews, 
   onAddReview,
-  onOpenAuthModal
+  onOpenAuthModal,
+  onUpdateUser
 }: DetailsPageProps) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -89,7 +91,28 @@ export default function DetailsPage({
     try {
       const response = await toggleFavori(item.id.toString());
       if (response.success) {
-        setIsFavorite(!isFavorite);
+        const newIsFavorite = !isFavorite;
+        setIsFavorite(newIsFavorite);
+        
+        // Mettre à jour le contexte utilisateur pour synchroniser avec UserProfilePage
+        if (onUpdateUser) {
+          const itemIdStr = item.id.toString();
+          const currentFavorisIds = currentUser.favorisIds || [];
+          let newFavorisIds: string[];
+          
+          if (newIsFavorite) {
+            // Ajouter aux favoris
+            newFavorisIds = [...currentFavorisIds, itemIdStr];
+          } else {
+            // Retirer des favoris
+            newFavorisIds = currentFavorisIds.filter(id => id !== itemIdStr);
+          }
+          
+          onUpdateUser({
+            ...currentUser,
+            favorisIds: newFavorisIds
+          });
+        }
       } else {
         console.error('Erreur:', response.message);
         alert(response.message || 'Erreur lors de la mise à jour des favoris');

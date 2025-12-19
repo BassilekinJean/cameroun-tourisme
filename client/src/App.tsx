@@ -444,6 +444,7 @@ export default function App() {
           currentUser={currentUser}
           reviews={reviews}
           onAddReview={handleAddReview}
+          onUpdateUser={handleUpdateUser}
         />
       )}
       

@@ -60,7 +60,7 @@ export default function DestinationsGrid({ onShowDetails }: DestinationsGridProp
         type: 'destination',
         description: destination.description,
         location: destination.ville,
-        rating: destination.nombreFavoris,
+        rating: destination.rating || 0,
         image: destination.photoProfile || (destination.images && destination.images[0]),
         category: 'Site Touristique'
       });
