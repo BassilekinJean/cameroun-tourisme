@@ -49,6 +49,7 @@ public class AviserviceImpl implements AvisServiceApi {
         Etablissement lieu = etablissementService.trouverAvecId(event.lieuId());
 
         Avis avis = new Avis();
+        avis.setPublicId(UUID.randomUUID());
         avis.setMessage(event.message());
         avis.setNote(event.note());
         avis.setAuteur(auteur);
