@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import type { User as UserType, Etablissement, Avis } from '../api/types';
 import { updateProfile, toggleFavori, updateProfilePhoto, sendPasswordChangeOtp, changePasswordWithOtp } from '../api/userService';
-import { getAvisByUser } from '../api/avisService';
+import { getAvisByUser, updateAvis, deleteAvis } from '../api/avisService';
 import { getEtablissementById } from '../api/etablissementService';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
@@ -73,6 +73,15 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
   // Données chargées
   const [favoris, setFavoris] = useState<FavoriItem[]>([]);
   const [userAvis, setUserAvis] = useState<UserAvis[]>([]);
+  
+  // États pour l'édition et suppression des avis
+  const [editingAvis, setEditingAvis] = useState<UserAvis | null>(null);
+  const [editAvisForm, setEditAvisForm] = useState({ message: '', note: 0 });
+  const [isUpdatingAvis, setIsUpdatingAvis] = useState(false);
+  const [deletingAvisId, setDeletingAvisId] = useState<string | null>(null);
+  const [isDeletingAvis, setIsDeletingAvis] = useState(false);
+  const [avisError, setAvisError] = useState<string | null>(null);
+  const [avisSuccess, setAvisSuccess] = useState<string | null>(null);
 
   // Charger les favoris
   useEffect(() => {
@@ -453,6 +462,114 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
     );
   };
 
+  // Handlers pour édition et suppression des avis
+  const handleEditAvis = (avis: UserAvis) => {
+    setEditingAvis(avis);
+    setEditAvisForm({ message: avis.message, note: avis.note });
+    setAvisError(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingAvis(null);
+    setEditAvisForm({ message: '', note: 0 });
+    setAvisError(null);
+  };
+
+  const handleUpdateAvis = async () => {
+    if (!editingAvis) return;
+    
+    if (!editAvisForm.message.trim()) {
+      setAvisError('Le message ne peut pas être vide');
+      return;
+    }
+    if (editAvisForm.note < 1 || editAvisForm.note > 5) {
+      setAvisError('La note doit être entre 1 et 5');
+      return;
+    }
+
+    setIsUpdatingAvis(true);
+    setAvisError(null);
+    
+    try {
+      const response = await updateAvis(editingAvis.publicId, {
+        message: editAvisForm.message,
+        note: editAvisForm.note
+      });
+      
+      if (response.success) {
+        // Mettre à jour la liste locale
+        setUserAvis(prev => prev.map(a => 
+          a.publicId === editingAvis.publicId 
+            ? { ...a, message: editAvisForm.message, note: editAvisForm.note }
+            : a
+        ));
+        setAvisSuccess('Avis mis à jour avec succès');
+        setEditingAvis(null);
+        setEditAvisForm({ message: '', note: 0 });
+        setTimeout(() => setAvisSuccess(null), 3000);
+      } else {
+        setAvisError(response.message || 'Erreur lors de la mise à jour');
+      }
+    } catch (error) {
+      setAvisError('Erreur lors de la mise à jour de l\'avis');
+    } finally {
+      setIsUpdatingAvis(false);
+    }
+  };
+
+  const handleConfirmDelete = (avisId: string) => {
+    setDeletingAvisId(avisId);
+    setAvisError(null);
+  };
+
+  const handleCancelDelete = () => {
+    setDeletingAvisId(null);
+  };
+
+  const handleDeleteAvis = async () => {
+    if (!deletingAvisId) return;
+    
+    setIsDeletingAvis(true);
+    setAvisError(null);
+    
+    try {
+      const response = await deleteAvis(deletingAvisId);
+      
+      if (response.success) {
+        // Retirer de la liste locale
+        setUserAvis(prev => prev.filter(a => a.publicId !== deletingAvisId));
+        setAvisSuccess('Avis supprimé avec succès');
+        setDeletingAvisId(null);
+        setTimeout(() => setAvisSuccess(null), 3000);
+      } else {
+        setAvisError(response.message || 'Erreur lors de la suppression');
+      }
+    } catch (error) {
+      setAvisError('Erreur lors de la suppression de l\'avis');
+    } finally {
+      setIsDeletingAvis(false);
+    }
+  };
+
+  const renderEditableStars = (currentRating: number, onRatingChange: (rating: number) => void) => {
+    return (
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onRatingChange(star)}
+            className="focus:outline-none transition-transform hover:scale-110"
+          >
+            <Star
+              className={`w-6 h-6 ${star <= currentRating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300 hover:text-yellow-400'}`}
+            />
+          </button>
+        ))}
+      </div>
+    );
+  };
+
   // Calcul des statistiques
   const stats = {
     favoris: user.favorisIds?.length || 0,
@@ -466,13 +583,19 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header du profil */}
-      <div className="bg-gradient-to-br from-green-600 via-green-500 to-emerald-500 text-white">
-        <div className="container mx-auto px-4 max-w-6xl">
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900 text-white relative overflow-hidden">
+        {/* Motif décoratif subtil */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-72 h-72 bg-teal-500 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="container mx-auto px-4 max-w-6xl relative z-10">
           {/* Bouton retour */}
           <div className="pt-6">
             <button 
               onClick={onBackToHome}
-              className="flex items-center gap-2 text-white/90 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
               Retour à l'accueil
@@ -493,11 +616,11 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
               <button
                 onClick={handlePhotoClick}
                 disabled={isUploadingPhoto}
-                className="w-32 h-32 rounded-full bg-white text-green-600 flex items-center justify-center text-4xl font-bold shadow-xl ring-4 ring-white/30 overflow-hidden cursor-pointer hover:ring-white/50 transition-all group relative"
+                className="w-32 h-32 rounded-full bg-white text-emerald-700 flex items-center justify-center text-4xl font-bold shadow-xl ring-4 ring-emerald-400/30 overflow-hidden cursor-pointer hover:ring-emerald-400/50 transition-all group relative"
                 title="Cliquez pour changer la photo"
               >
                 {isUploadingPhoto ? (
-                  <Loader2 className="w-10 h-10 animate-spin text-green-600" />
+                  <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
                 ) : user.photoProfile ? (
                   <>
                     <img src={user.photoProfile} alt={user.nomComplet} className="w-full h-full rounded-full object-cover" />
@@ -514,7 +637,7 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
                   </>
                 )}
               </button>
-              <div className="absolute bottom-0 right-0 bg-white text-green-600 p-2 rounded-full shadow-lg pointer-events-none">
+              <div className="absolute bottom-0 right-0 bg-emerald-500 text-white p-2 rounded-full shadow-lg pointer-events-none">
                 <Camera className="w-5 h-5" />
               </div>
               {photoError && (
@@ -527,9 +650,9 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
             {/* Infos */}
             <div className="text-center md:text-left flex-1">
               <h1 className="text-4xl font-bold mb-2">{user.nomComplet}</h1>
-              <p className="text-green-100 mb-2">{user.email}</p>
+              <p className="text-slate-300 mb-2">{user.email}</p>
               {user.paysOrigine && (
-                <p className="text-green-200 text-sm flex items-center gap-1 justify-center md:justify-start">
+                <p className="text-emerald-300 text-sm flex items-center gap-1 justify-center md:justify-start">
                   <MapPin className="w-4 h-4" />
                   {user.paysOrigine}
                 </p>
@@ -538,20 +661,20 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
 
             {/* Stats rapides */}
             <div className="grid grid-cols-3 gap-6">
-              <div className="text-center">
+              <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
                 <div className="text-3xl font-bold">{stats.favoris}</div>
-                <div className="text-green-200 text-sm">Favoris</div>
+                <div className="text-slate-300 text-sm">Favoris</div>
               </div>
-              <div className="text-center">
+              <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
                 <div className="text-3xl font-bold">{stats.avis}</div>
-                <div className="text-green-200 text-sm">Avis</div>
+                <div className="text-slate-300 text-sm">Avis</div>
               </div>
-              <div className="text-center">
+              <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
                 <div className="text-3xl font-bold flex items-center justify-center gap-1">
                   {stats.noteMoyenne}
                   <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                 </div>
-                <div className="text-green-200 text-sm">Note moy.</div>
+                <div className="text-slate-300 text-sm">Note moy.</div>
               </div>
             </div>
           </div>
@@ -569,8 +692,8 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
                 onClick={() => setActiveTab(tab.id as TabType)}
                 className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-medium transition-all ${
                   activeTab === tab.id
-                    ? 'bg-gray-50 text-green-700'
-                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                    ? 'bg-gray-50 text-emerald-700'
+                    : 'text-white/70 hover:text-white hover:bg-white/10'
                 }`}
               >
                 <tab.icon className="w-5 h-5" />
@@ -585,8 +708,8 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
       <div className="container mx-auto px-4 max-w-6xl py-8">
         {/* Message de succès */}
         {successMessage && (
-          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-xl flex items-center gap-2 animate-fade-in">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <div className="mb-6 p-4 bg-emerald-100 border border-emerald-400 text-emerald-700 rounded-xl flex items-center gap-2 animate-fade-in">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
             {successMessage}
           </div>
         )}
@@ -599,7 +722,7 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
               {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+                  className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors"
                 >
                   <Edit3 className="w-4 h-4" />
                   Modifier
@@ -708,10 +831,10 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
                       {/* Étape de succès */}
                       {otpStep === 'success' ? (
                         <div className="text-center py-8">
-                          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <CheckCircle className="w-10 h-10 text-green-600" />
+                          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <CheckCircle className="w-10 h-10 text-emerald-600" />
                           </div>
-                          <h4 className="text-xl font-semibold text-green-700 mb-2">Mot de passe modifié !</h4>
+                          <h4 className="text-xl font-semibold text-emerald-700 mb-2">Mot de passe modifié !</h4>
                           <p className="text-gray-600">Votre mot de passe a été changé avec succès.</p>
                         </div>
                       ) : otpStep === 'verify' ? (
@@ -895,7 +1018,7 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
                               type="button"
                               onClick={handleSendPasswordOtp}
                               disabled={isOtpLoading}
-                              className="px-6 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                              className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                             >
                               {isOtpLoading ? (
                                 <>
@@ -923,7 +1046,7 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (
                       <>
@@ -963,7 +1086,7 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
 
             {loadingFavoris ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
               </div>
             ) : favoris.length === 0 ? (
               <div className="text-center py-16">
@@ -972,7 +1095,7 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
                 <p className="text-gray-500 mb-6">Explorez nos établissements et ajoutez-les à vos favoris</p>
                 <button
                   onClick={onBackToHome}
-                  className="px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition"
+                  className="px-6 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition"
                 >
                   Explorer
                 </button>
@@ -1032,9 +1155,23 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
               </div>
             </div>
 
+            {/* Messages de succès/erreur */}
+            {avisSuccess && (
+              <div className="mb-4 p-4 bg-emerald-50 border border-green-200 rounded-xl flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 text-emerald-600" />
+                <span className="text-emerald-700">{avisSuccess}</span>
+              </div>
+            )}
+            {avisError && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+                <span className="text-red-700">{avisError}</span>
+              </div>
+            )}
+
             {loadingAvis ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
               </div>
             ) : userAvis.length === 0 ? (
               <div className="text-center py-16">
@@ -1043,7 +1180,7 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
                 <p className="text-gray-500 mb-6">Partagez votre expérience avec la communauté</p>
                 <button
                   onClick={onBackToHome}
-                  className="px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition"
+                  className="px-6 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition"
                 >
                   Écrire un avis
                 </button>
@@ -1053,7 +1190,7 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
                 {userAvis.map((avis) => (
                   <div 
                     key={avis.publicId}
-                    className="border border-gray-200 rounded-xl p-5 hover:border-green-300 transition-colors"
+                    className="border border-gray-200 rounded-xl p-5 hover:border-emerald-300 transition-colors"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div>
@@ -1069,10 +1206,18 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button className="p-2 text-gray-400 hover:text-green-600 transition">
+                        <button 
+                          onClick={() => handleEditAvis(avis)}
+                          className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
+                          title="Modifier l'avis"
+                        >
                           <Edit3 className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-red-600 transition">
+                        <button 
+                          onClick={() => handleConfirmDelete(avis.publicId)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                          title="Supprimer l'avis"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -1092,8 +1237,8 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-green-100 rounded-xl">
-                    <Heart className="w-6 h-6 text-green-600" />
+                  <div className="p-3 bg-emerald-100 rounded-xl">
+                    <Heart className="w-6 h-6 text-emerald-600" />
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-gray-900">{stats.favoris}</div>
@@ -1153,8 +1298,8 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
                 <div className="space-y-4">
                   {userAvis.slice(0, 5).map((avis) => (
                     <div key={avis.publicId} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                      <div className="p-2 bg-green-100 rounded-full">
-                        <MessageCircle className="w-5 h-5 text-green-600" />
+                      <div className="p-2 bg-emerald-100 rounded-full">
+                        <MessageCircle className="w-5 h-5 text-emerald-600" />
                       </div>
                       <div className="flex-1">
                         <p className="text-gray-900">Vous avez laissé un avis {avis.note} ⭐</p>
@@ -1171,17 +1316,17 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-6">Badges</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className={`text-center p-4 rounded-xl ${stats.avis >= 1 ? 'bg-green-50' : 'bg-gray-100 opacity-50'}`}>
+                <div className={`text-center p-4 rounded-xl ${stats.avis >= 1 ? 'bg-emerald-50' : 'bg-gray-100 opacity-50'}`}>
                   <div className="text-3xl mb-2">✍️</div>
                   <div className="font-medium text-gray-900">Premier Avis</div>
                   <div className="text-xs text-gray-500">Publier votre premier avis</div>
                 </div>
-                <div className={`text-center p-4 rounded-xl ${stats.favoris >= 5 ? 'bg-green-50' : 'bg-gray-100 opacity-50'}`}>
+                <div className={`text-center p-4 rounded-xl ${stats.favoris >= 5 ? 'bg-emerald-50' : 'bg-gray-100 opacity-50'}`}>
                   <div className="text-3xl mb-2">❤️</div>
                   <div className="font-medium text-gray-900">Collectionneur</div>
                   <div className="text-xs text-gray-500">5 favoris enregistrés</div>
                 </div>
-                <div className={`text-center p-4 rounded-xl ${stats.avis >= 10 ? 'bg-green-50' : 'bg-gray-100 opacity-50'}`}>
+                <div className={`text-center p-4 rounded-xl ${stats.avis >= 10 ? 'bg-emerald-50' : 'bg-gray-100 opacity-50'}`}>
                   <div className="text-3xl mb-2">🌟</div>
                   <div className="font-medium text-gray-900">Critique</div>
                   <div className="text-xs text-gray-500">10 avis publiés</div>
@@ -1196,6 +1341,134 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
           </div>
         )}
       </div>
+
+      {/* Modal d'édition d'avis */}
+      {editingAvis && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-slate-800 to-slate-700 p-6">
+              <h3 className="text-xl font-semibold text-white flex items-center gap-3">
+                <Edit3 className="w-6 h-6" />
+                Modifier l'avis
+              </h3>
+              {editingAvis.etablissementNom && (
+                <p className="text-slate-300 mt-1">{editingAvis.etablissementNom}</p>
+              )}
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Note */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Votre note
+                </label>
+                {renderEditableStars(editAvisForm.note, (rating) => setEditAvisForm(prev => ({ ...prev, note: rating })))}
+              </div>
+              
+              {/* Message */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Votre commentaire
+                </label>
+                <textarea
+                  value={editAvisForm.message}
+                  onChange={(e) => setEditAvisForm(prev => ({ ...prev, message: e.target.value }))}
+                  rows={5}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none transition"
+                  placeholder="Partagez votre expérience..."
+                />
+              </div>
+              
+              {avisError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {avisError}
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+              <button
+                onClick={handleCancelEdit}
+                disabled={isUpdatingAvis}
+                className="px-5 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition font-medium"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleUpdateAvis}
+                disabled={isUpdatingAvis}
+                className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-medium flex items-center gap-2 disabled:opacity-50"
+              >
+                {isUpdatingAvis ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Enregistrer
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmation de suppression */}
+      {deletingAvisId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Supprimer cet avis ?
+              </h3>
+              <p className="text-gray-600">
+                Cette action est irréversible. Votre avis sera définitivement supprimé.
+              </p>
+              
+              {avisError && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center justify-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {avisError}
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-gray-50 px-6 py-4 flex justify-center gap-3">
+              <button
+                onClick={handleCancelDelete}
+                disabled={isDeletingAvis}
+                className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition font-medium"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDeleteAvis}
+                disabled={isDeletingAvis}
+                className="px-6 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-medium flex items-center gap-2 disabled:opacity-50"
+              >
+                {isDeletingAvis ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Suppression...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Supprimer
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

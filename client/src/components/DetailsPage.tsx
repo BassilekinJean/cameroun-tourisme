@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, MapPin, Star, Clock, Calendar, Users, Phone, 
-  Mail, Globe, Share2, Heart, MessageCircle, Loader2, HeartOff
+  Mail, Globe, Share2, Heart, MessageCircle, Loader2, HeartOff,
+  X, Copy, Check, Facebook, Twitter, Linkedin, Link2
 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import BookingModal from './BookingModal';
@@ -60,6 +61,8 @@ export default function DetailsPage({
   const [isAddReviewModalOpen, setIsAddReviewModalOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   // Scroll vers le haut lors du chargement de la page
   useEffect(() => {
@@ -87,9 +90,13 @@ export default function DetailsPage({
       const response = await toggleFavori(item.id.toString());
       if (response.success) {
         setIsFavorite(!isFavorite);
+      } else {
+        console.error('Erreur:', response.message);
+        alert(response.message || 'Erreur lors de la mise à jour des favoris');
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour des favoris:', error);
+      alert('Erreur de connexion au serveur');
     } finally {
       setIsTogglingFavorite(false);
     }
@@ -111,18 +118,43 @@ export default function DetailsPage({
     return labels[item.category] || 'Lieu';
   };
 
+  // URL de partage
+  const shareUrl = `${window.location.origin}/lieux/${item.id}`;
+  const shareText = `Découvrez ${item.name} - ${item.description}`;
+
   const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: item.name,
-        text: item.description,
-        url: window.location.href,
-      });
-    } else {
-      // Fallback: copier le lien
-      navigator.clipboard.writeText(window.location.href);
-      alert('Lien copié dans le presse-papier !');
+    setIsShareModalOpen(true);
+    setLinkCopied(false);
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (err) {
+      console.error('Erreur lors de la copie:', err);
     }
+  };
+
+  const handleShareFacebook = () => {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400');
+  };
+
+  const handleShareTwitter = () => {
+    window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`, '_blank', 'width=600,height=400');
+  };
+
+  const handleShareLinkedin = () => {
+    window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(item.name)}`, '_blank', 'width=600,height=400');
+  };
+
+  const handleShareWhatsApp = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank');
+  };
+
+  const handleShareEmail = () => {
+    window.location.href = `mailto:?subject=${encodeURIComponent(item.name)}&body=${encodeURIComponent(shareText + '\n\n' + shareUrl)}`;
   };
 
   return (
@@ -436,6 +468,122 @@ export default function DetailsPage({
           currentUser={currentUser}
           onOpenAuthModal={onOpenAuthModal}
         />
+      )}
+
+      {/* Share Modal */}
+      {isShareModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b">
+              <h3 className="text-xl font-semibold text-gray-900">Partager</h3>
+              <button 
+                onClick={() => setIsShareModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-5">
+              {/* Aperçu */}
+              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl mb-6">
+                <img 
+                  src={item.image} 
+                  alt={item.name}
+                  className="w-16 h-16 rounded-lg object-cover"
+                />
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-gray-900 truncate">{item.name}</h4>
+                  <p className="text-sm text-gray-500 truncate">{item.location}</p>
+                </div>
+              </div>
+
+              {/* Réseaux sociaux */}
+              <div className="grid grid-cols-4 gap-3 mb-6">
+                <button
+                  onClick={handleShareFacebook}
+                  className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-blue-50 transition group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <Facebook className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs text-gray-600">Facebook</span>
+                </button>
+                
+                <button
+                  onClick={handleShareTwitter}
+                  className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-sky-50 transition group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-sky-500 flex items-center justify-center group-hover:scale-110 transition">
+                    <Twitter className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs text-gray-600">Twitter</span>
+                </button>
+
+                <button
+                  onClick={handleShareWhatsApp}
+                  className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-green-50 transition group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center group-hover:scale-110 transition">
+                    <MessageCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs text-gray-600">WhatsApp</span>
+                </button>
+
+                <button
+                  onClick={handleShareLinkedin}
+                  className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-blue-50 transition group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-blue-700 flex items-center justify-center group-hover:scale-110 transition">
+                    <Linkedin className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs text-gray-600">LinkedIn</span>
+                </button>
+              </div>
+
+              {/* Email */}
+              <button
+                onClick={handleShareEmail}
+                className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition mb-4"
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-gray-600" />
+                </div>
+                <span className="text-gray-700 font-medium">Envoyer par email</span>
+              </button>
+
+              {/* Copier le lien */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center gap-2 px-4 py-3 bg-gray-100 rounded-xl">
+                  <Link2 className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  <span className="text-sm text-gray-600 truncate">{shareUrl}</span>
+                </div>
+                <button
+                  onClick={handleCopyLink}
+                  className={`px-4 py-3 rounded-xl font-medium transition flex items-center gap-2 ${
+                    linkCopied 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                  }`}
+                >
+                  {linkCopied ? (
+                    <>
+                      <Check className="w-5 h-5" />
+                      Copié !
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-5 h-5" />
+                      Copier
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

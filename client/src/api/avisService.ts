@@ -130,7 +130,7 @@ export const updateAvis = async (
  */
 export const deleteAvis = async (publicId: string): Promise<ApiResponse<void>> => {
   try {
-    await apiClient.delete(`${AVIS_BASE}/${publicId}`);
+    await apiClient.delete(`${AVIS_BASE}/${publicId}/del`);
     return {
       success: true,
       message: 'Avis supprimé avec succès',

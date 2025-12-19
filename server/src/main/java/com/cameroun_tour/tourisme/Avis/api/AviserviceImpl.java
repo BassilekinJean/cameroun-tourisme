@@ -13,6 +13,7 @@ import com.cameroun_tour.tourisme.Avis.Avis;
 import com.cameroun_tour.tourisme.Avis.AvisServiceApi;
 import com.cameroun_tour.tourisme.Avis.errors.CommentNotFoundException;
 import com.cameroun_tour.tourisme.Avis.model.AvisDto;
+import com.cameroun_tour.tourisme.Avis.model.AvisUpdateDto;
 import com.cameroun_tour.tourisme.common.contracts.AdminAvisDto;
 import com.cameroun_tour.tourisme.common.events.AvisPublieEvent;
 import com.cameroun_tour.tourisme.etablissement.EtablissementServiceApi;
@@ -60,7 +61,7 @@ public class AviserviceImpl implements AvisServiceApi {
     }
 
     @SuppressWarnings("null")
-    public void editAvis(UUID auteurUuid ,AvisDto avisDto) {
+    public void editAvis(UUID auteurUuid, AvisUpdateDto avisDto) {
         var avis = avisRepository.findByPublicId(avisDto.getPublicId())
                 .orElseThrow(() -> new CommentNotFoundException("avis Introuvable ou inexistant"));
 

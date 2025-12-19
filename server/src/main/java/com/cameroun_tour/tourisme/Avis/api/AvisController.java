@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cameroun_tour.tourisme.Avis.Avis;
 import com.cameroun_tour.tourisme.Avis.AvisServiceApi;
 import com.cameroun_tour.tourisme.Avis.model.AvisDto;
+import com.cameroun_tour.tourisme.Avis.model.AvisUpdateDto;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 
 import jakarta.validation.Valid;
@@ -72,7 +73,7 @@ public class AvisController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<Void> modifierUnAvis(@Valid @RequestBody AvisDto entity) {
+    public ResponseEntity<Void> modifierUnAvis(@Valid @RequestBody AvisUpdateDto entity) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UtilisateurEntity currentUser = (UtilisateurEntity) authentication.getPrincipal();
 
