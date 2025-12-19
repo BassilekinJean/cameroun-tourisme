@@ -64,8 +64,8 @@ export const getAvisByUser = async (
   direction: 'asc' | 'desc' = 'desc'
 ): Promise<ApiResponse<PageResponse<Avis>>> => {
   try {
-    const response = await apiClient.get<PageResponse<Avis>>(`${AVIS_BASE}/user/${userPublicId}`, {
-      params: { page, size, sortBy, direction },
+    const response = await apiClient.get<PageResponse<Avis>>(`${AVIS_BASE}/user`, {
+      params: { userId: userPublicId, page, size, sort: sortBy, sortDir: direction },
     });
     return {
       success: true,
