@@ -21,15 +21,20 @@ export enum TypeLieu {
 
 /**
  * Correspond à VoyageurResponse du backend (HATEOAS)
+ * Note: 'id' peut être mappé depuis 'publicId' du backend
  */
 export interface User {
-  id: string; // UUID (publicId)
+  id: string; // UUID (publicId) - mappé depuis publicId ou id
+  publicId?: string; // UUID original du backend
   nomComplet: string;
   email: string;
   paysOrigine?: string;
   photoProfile?: string;
   favorisIds: string[]; // Set<UUID> d'établissements
   role?: Role;
+  accountLocked?: boolean;
+  emailVerified?: boolean;
+  dateCreation?: string;
 }
 
 /**
@@ -42,6 +47,7 @@ export interface UtilisateurDto {
   paysOrigine: string;
   photoProfile?: string;
   favorisIds: string[];
+  role?: Role;
 }
 
 /**
@@ -84,6 +90,20 @@ export interface UserUpdateData {
 export interface Localisation {
   latitude: number;
   longitude: number;
+}
+
+/**
+ * DTO pour l'authentification des établissements
+ * Correspond à EtablissementAuthDto du backend
+ */
+export interface EtablissementAuthDto {
+  publicId: string;
+  nom: string;
+  email: string;
+  photoProfile?: string;
+  ville: string;
+  telephone: string;
+  role: Role;
 }
 
 /**

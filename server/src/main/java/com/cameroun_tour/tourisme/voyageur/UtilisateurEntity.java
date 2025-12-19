@@ -98,7 +98,8 @@ public class UtilisateurEntity implements UserDetails{
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.name()));
+        // Spring Security attend le préfixe ROLE_ pour hasRole()
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
     @Override
     public String getPassword() {

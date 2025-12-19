@@ -65,7 +65,8 @@ public class UtilisateurServiceImpl implements UtilisateurService {
                                   u.getUserEmail(),
                                   u.getPaysOrigine(),
                                   u.getPhotoProfile(),
-                                  u.getFavorisIds()); // Directement les UUIDs
+                                  u.getFavorisIds(), // Directement les UUIDs
+                                  u.getRole()); // Ajouter le rôle
     }
 
 

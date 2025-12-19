@@ -4,7 +4,7 @@
  */
 
 // Configuration
-export { default as apiClient, getErrorMessage, API_BASE_URL } from './config';
+export { default as apiClient, getErrorMessage, API_BASE_URL, getPhotoUrl } from './config';
 export type { ApiError } from './config';
 
 // Types

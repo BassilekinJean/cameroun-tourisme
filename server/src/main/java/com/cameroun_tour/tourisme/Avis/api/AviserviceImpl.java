@@ -92,6 +92,16 @@ public class AviserviceImpl implements AvisServiceApi {
         return avisRepository.findByLieuConcerne_Id(lieuId, pageable);
     }
 
+    @Override
+    public Page<Avis> listerLesAvisParPublicId(UUID etablissementPublicId, int page, int size, String sortBy, String sortDir) {
+        var sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
+                                                : Sort.by(sortBy).descending();
+
+        var pageable = PageRequest.of(page, size, sort);
+
+        return avisRepository.findByLieuConcerne_PublicId(etablissementPublicId, pageable);
+    }
+
     public Page<AvisDto> utilisateurAvis(UUID userPublicId, int page, int size, String sortBy,
             String sortDir) {
                 var sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()

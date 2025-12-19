@@ -121,3 +121,57 @@ export const reportAvis = async (
     };
   }
 };
+
+/**
+ * Mettre à jour la photo de profil de l'établissement
+ */
+export const updateEtablissementPhoto = async (file: File): Promise<ApiResponse<{ url: string }>> => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await apiClient.post<{ url: string }>(`${PANEL_BASE}/photo`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return {
+      success: true,
+      data: response.data,
+      message: 'Photo mise à jour avec succès',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: getErrorMessage(error),
+    };
+  }
+};
+
+/**
+ * Ajouter des images à la galerie de l'établissement
+ */
+export const addEtablissementImages = async (files: File[]): Promise<ApiResponse<{ urls: string[] }>> => {
+  try {
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+    
+    const response = await apiClient.post<{ urls: string[] }>(`${PANEL_BASE}/images`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return {
+      success: true,
+      data: response.data,
+      message: 'Images ajoutées avec succès',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: getErrorMessage(error),
+    };
+  }
+};

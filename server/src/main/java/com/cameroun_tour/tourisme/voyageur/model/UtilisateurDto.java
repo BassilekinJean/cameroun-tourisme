@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import com.cameroun_tour.tourisme.common.utils.enums.Role;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
@@ -24,12 +26,17 @@ public record UtilisateurDto(
 
     String photoProfile,
 
-    Set<UUID> favorisIds
+    Set<UUID> favorisIds,
+    
+    Role role
 
 ) {
     public UtilisateurDto {
         if (favorisIds == null) {
             favorisIds = new HashSet<>();
+        }
+        if (role == null) {
+            role = Role.USER;
         }
     }
 }

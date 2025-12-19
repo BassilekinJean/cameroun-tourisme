@@ -28,6 +28,11 @@ public interface AvisServiceApi {
 
     Page<Avis> listerLesAvisLieu(Long lieuId, int page, int size, String sortBy, String sortDir);
 
+    /**
+     * Liste les avis d'un établissement par son publicId (UUID)
+     */
+    Page<Avis> listerLesAvisParPublicId(UUID etablissementPublicId, int page, int size, String sortBy, String sortDir);
+
     Page<AvisDto> utilisateurAvis(UUID userId, int page, int size, String sortBy, String sortDir);
 
     // ==================== MÉTHODES ADMIN ====================

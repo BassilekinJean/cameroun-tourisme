@@ -53,13 +53,13 @@ public class AvisController {
     
     
     @GetMapping(path = "/all", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Page<Avis>> listerLesAvisDunLieu(@RequestParam Long lieuId,
+    public ResponseEntity<Page<Avis>> listerLesAvisDunLieu(@RequestParam UUID etablissementId,
                                                                             @RequestParam int page, 
                                                                             @RequestParam int size, 
-                                                                            @RequestParam String sort, 
-                                                                            @RequestParam String sortDir)
+                                                                            @RequestParam String sortBy, 
+                                                                            @RequestParam String direction)
     {
-        return ResponseEntity.ok().body(avisService.listerLesAvisLieu(lieuId, page, size, sort, sortDir));
+        return ResponseEntity.ok().body(avisService.listerLesAvisParPublicId(etablissementId, page, size, sortBy, direction));
     }
 
     @GetMapping(path = "/user", produces = MediaType.APPLICATION_JSON_VALUE)
