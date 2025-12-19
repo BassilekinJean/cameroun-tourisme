@@ -65,6 +65,52 @@ export default function DetailsPage({
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  
+  // État pour les avis chargés depuis l'API
+  const [apiReviews, setApiReviews] = useState<Review[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+
+  // Fonction pour charger les avis depuis l'API
+  const fetchReviews = async () => {
+    setLoadingReviews(true);
+    try {
+      const response = await getAvisByEtablissement(item.id.toString(), 0, 50, 'dateCreation', 'desc');
+      if (response.success && response.data?.content) {
+        // Transformer les avis de l'API en format Review
+        const transformedReviews: Review[] = response.data.content.map((avis: any) => ({
+          id: avis.publicId,
+          placeId: item.id.toString(),
+          placeName: item.name,
+          userId: avis.auteurId || '',
+          userName: avis.auteurName || avis.auteur?.nomComplet || 'Utilisateur',
+          rating: avis.note,
+          comment: avis.message,
+          date: avis.dateCreation,
+          helpful: avis.nombreFavoris || avis.nombreLikes || 0,
+        }));
+        setApiReviews(transformedReviews);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des avis:', error);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  // Charger les avis depuis l'API au montage et changement d'item
+  useEffect(() => {
+    fetchReviews();
+  }, [item.id, item.name]);
+
+  // Handler pour après l'ajout d'un avis
+  const handleReviewAdded = (placeId: string, placeName: string, rating: number, comment: string) => {
+    // Appeler le handler parent si nécessaire
+    onAddReview(placeId, placeName, rating, comment);
+    // Recharger les avis depuis l'API pour avoir les données à jour
+    setTimeout(() => {
+      fetchReviews();
+    }, 500); // Petit délai pour laisser le temps au serveur de traiter
+  };
 
   // Scroll vers le haut lors du chargement de la page
   useEffect(() => {
@@ -127,8 +173,8 @@ export default function DetailsPage({
 
   const allImages = item.images || [item.image];
 
-  // Filtrer les avis pour cet élément
-  const itemReviews = reviews.filter(review => review.placeId === item.id.toString());
+  // Utiliser les avis de l'API (ils sont déjà filtrés par établissement)
+  const itemReviews = apiReviews;
 
   const getCategoryLabel = () => {
     const labels: Record<string, string> = {
@@ -473,7 +519,7 @@ export default function DetailsPage({
           onClose={() => setIsBookingModalOpen(false)}
           placeData={{
             name: item.name,
-            category: item.category,
+            category: item.category === 'events' ? 'activities' : item.category,
             location: item.location,
             image: item.image,
           }}
@@ -487,7 +533,7 @@ export default function DetailsPage({
           onClose={() => setIsAddReviewModalOpen(false)}
           placeId={item.id.toString()}
           placeName={item.name}
-          onAddReview={onAddReview}
+          onAddReview={handleReviewAdded}
           currentUser={currentUser}
           onOpenAuthModal={onOpenAuthModal}
         />
