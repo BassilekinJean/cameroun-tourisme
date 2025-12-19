@@ -633,7 +633,33 @@ INSERT INTO etablissement_images (etablissement_id, images) VALUES (@dja_id, 'ht
 INSERT INTO etablissement_images (etablissement_id, images) VALUES (@dja_id, 'https://images.unsplash.com/photo-1425913397330-cf8af2ff40a1?w=800');
 
 -- ================================================================
+-- CRÉATION D'UN UTILISATEUR ADMIN
+-- ================================================================
+
+-- Suppression de l'admin existant si présent (évite les doublons)
+DELETE FROM utilisateur_entity WHERE user_email = 'admin@camerountour.cm';
+
+-- Création de l'utilisateur administrateur
+-- Email: admin@camerountour.cm | Mot de passe: Admin@123
+INSERT INTO utilisateur_entity (public_id, nom_complet, user_email, user_password, pays_origine, role, failed_attempt, account_locked, date_creation, updated_at)
+VALUES (
+    UNHEX(REPLACE(UUID(), '-', '')),
+    'Administrateur Principal',
+    'admin@camerountour.cm',
+    '$2a$10$ilP7VZo/5/z1IZCo3cw0heHUkprGZ1tJqVvRc08IctjEvc1iNSxZC',
+    'Cameroun',
+    'ADMIN',
+    0,
+    false,
+    NOW(),
+    NOW()
+);
+
+SELECT 'Utilisateur Admin créé avec succès!' AS admin_status;
+
+-- ================================================================
 -- FIN DU SCRIPT
 -- ================================================================
 
 SELECT CONCAT('Insertion terminée: ', COUNT(*), ' établissements créés') AS resultat FROM etablissement;
+SELECT CONCAT('Utilisateurs admin: ', COUNT(*), ' créés') AS admin_resultat FROM utilisateur_entity WHERE role = 'ADMIN';
