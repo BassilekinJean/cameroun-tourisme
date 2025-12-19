@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cameroun_tour.tourisme.Avis.api.AvisRepository;
 import com.cameroun_tour.tourisme.common.contracts.AvisCreationDto;
 import com.cameroun_tour.tourisme.common.utils.enums.TypeLieu;
 import com.cameroun_tour.tourisme.etablissement.Etablissement;
@@ -38,6 +39,26 @@ import lombok.RequiredArgsConstructor;
 public class EtablissementController {
 
     private final EtablissementServiceApi etablissementService;
+    private final AvisRepository avisRepository;
+
+    /**
+     * Convertit un établissement en EtablissementListItem avec le rating calculé
+     */
+    private EtablissementListItem toListItemWithRating(Etablissement e) {
+        Double avgRating = avisRepository.findAverageRatingByEtablissementId(e.getId());
+        return EtablissementListItem.builder()
+                .publicId(e.getPublicId())
+                .nom(e.getNom())
+                .description(e.getDescription())
+                .ville(e.getVille())
+                .photoProfile(e.getPhotoProfile())
+                .images(e.getImages())
+                .categorie(e.getCategorie())
+                .nombreFavoris(e.getNombreFavoris())
+                .nombreAvis(e.getNombreFavoris()) // TODO: corriger pour le vrai nombre d'avis
+                .rating(avgRating != null ? Math.round(avgRating * 10) / 10.0 : null)
+                .build();
+    }
 
     /**
      * Récupérer tous les établissements avec pagination
@@ -58,7 +79,7 @@ public class EtablissementController {
             etablissements = etablissementService.findAll(pageable);
         }
         
-        Page<EtablissementListItem> response = etablissements.map(EtablissementListItem::fromEntity);
+        Page<EtablissementListItem> response = etablissements.map(this::toListItemWithRating);
         return ResponseEntity.ok(response);
     }
 
@@ -69,7 +90,13 @@ public class EtablissementController {
     @GetMapping("/{publicId}")
     public ResponseEntity<EtablissementResponse> getById(@PathVariable UUID publicId) {
         Etablissement etablissement = etablissementService.findByPublicId(publicId);
-        return ResponseEntity.ok(EtablissementResponse.fromEntity(etablissement));
+        EtablissementResponse response = EtablissementResponse.fromEntity(etablissement);
+        
+        // Calculer le rating depuis les avis
+        Double avgRating = avisRepository.findAverageRatingByEtablissementId(etablissement.getId());
+        response.setRating(avgRating != null ? Math.round(avgRating * 10) / 10.0 : null);
+        
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -96,7 +123,7 @@ public class EtablissementController {
         Page<Etablissement> results = etablissementService.search(query, categorie, ville, pageable);
         
         List<EtablissementListItem> items = results.getContent().stream()
-                .map(EtablissementListItem::fromEntity)
+                .map(this::toListItemWithRating)
                 .collect(Collectors.toList());
         
         SearchResult searchResult = SearchResult.builder()
@@ -121,7 +148,7 @@ public class EtablissementController {
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Etablissement> etablissements = etablissementService.findByCategorie(categorie, pageable);
-        Page<EtablissementListItem> response = etablissements.map(EtablissementListItem::fromEntity);
+        Page<EtablissementListItem> response = etablissements.map(this::toListItemWithRating);
         return ResponseEntity.ok(response);
     }
 
@@ -137,7 +164,7 @@ public class EtablissementController {
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Etablissement> etablissements = etablissementService.findByVille(ville, pageable);
-        Page<EtablissementListItem> response = etablissements.map(EtablissementListItem::fromEntity);
+        Page<EtablissementListItem> response = etablissements.map(this::toListItemWithRating);
         return ResponseEntity.ok(response);
     }
 
@@ -151,7 +178,7 @@ public class EtablissementController {
         
         List<Etablissement> etablissements = etablissementService.findPopular(size);
         List<EtablissementListItem> response = etablissements.stream()
-                .map(EtablissementListItem::fromEntity)
+                .map(this::toListItemWithRating)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }

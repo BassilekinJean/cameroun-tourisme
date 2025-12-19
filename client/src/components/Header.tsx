@@ -17,7 +17,7 @@ interface HeaderProps {
   onAddPlace: () => void;
   onAboutPage?: () => void;
   onContactPage?: () => void;
-  onSearch?: (query: string) => void;
+  onSearch?: (query: string, category?: 'all' | 'hotels' | 'restaurants' | 'activities') => void;
   onGoToAdmin?: () => void;
   onGoToEtablissementPanel?: () => void;
   currentPage: 'home' | 'destination' | 'activities' | 'profile' | 'write-review' | 'share-tip' | 'publish-photos' | 'add-place' | 'details' | 'about' | 'contact' | 'search' | 'admin' | 'etablissement-panel';

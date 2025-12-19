@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 
 import com.cameroun_tour.tourisme.Avis.model.AvisDto;
+import com.cameroun_tour.tourisme.Avis.model.AvisUpdateDto;
 import com.cameroun_tour.tourisme.common.contracts.AdminAvisDto;
 import com.cameroun_tour.tourisme.common.events.AvisPublieEvent;
 
@@ -19,7 +20,7 @@ public interface AvisServiceApi {
 
     void onAvisPublier(AvisPublieEvent event);
 
-    void editAvis(UUID auteurId ,AvisDto comment);
+    void editAvis(UUID auteurId, AvisUpdateDto comment);
 
     void supprimerAvis(Long id);
 

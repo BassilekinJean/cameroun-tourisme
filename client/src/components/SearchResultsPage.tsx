@@ -1,428 +1,389 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search, MapPin, Star, Filter, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ArrowLeft, Search, MapPin, Star, Loader2, Hotel, Utensils, Compass, Grid3X3, X, ChevronDown } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { DetailsItem } from './DetailsPage';
-import type { Etablissement, EtablissementCategorie } from '../api/types';
+import type { EtablissementListItem, TypeLieu, SearchParams } from '../api/types';
 import { searchEtablissements, getEtablissementsByCategorie, getAllEtablissements } from '../api/etablissementService';
+
+// Types pour les catégories de recherche
+type SearchCategory = 'all' | 'hotels' | 'restaurants' | 'activities';
 
 interface SearchResultsPageProps {
   searchQuery: string;
+  initialCategory?: SearchCategory;
   onBack: () => void;
   onShowDetails: (item: DetailsItem) => void;
 }
 
-// Helper pour convertir un Etablissement API en DetailsItem
-const etablissementToDetailsItem = (e: Etablissement): DetailsItem => ({
+// Helper pour convertir un EtablissementListItem API en DetailsItem
+const etablissementToDetailsItem = (e: EtablissementListItem): DetailsItem => ({
   id: e.publicId,
   name: e.nom,
   category: e.categorie === 'HOTEL' ? 'hotels' : 
-            e.categorie === 'RESTAURANT' ? 'restaurants' : 
-            e.categorie === 'ACTIVITE' ? 'activities' : 'popular',
-  image: e.imagePrincipale || 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800',
-  rating: e.noteMoyenne || 0,
+            e.categorie === 'RESTAURATION' ? 'restaurants' : 
+            e.categorie === 'SITE_TOURISTIQUE' ? 'activities' : 'popular',
+  image: e.photoProfile || e.images?.[0] || 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800',
+  rating: e.rating || 0,
   description: e.description || '',
   location: e.ville || 'Cameroun',
-  price: e.prixMoyen ? `${e.prixMoyen.toLocaleString()} FCFA` : undefined,
-  phone: e.telephone,
-  email: e.email,
-  amenities: e.commodites || [],
-  cuisine: e.categorie === 'RESTAURANT' ? 'Camerounaise' : undefined,
+  price: undefined,
+  phone: undefined,
+  email: undefined,
+  amenities: [],
 });
 
-export default function SearchResultsPage({ searchQuery, onBack, onShowDetails }: SearchResultsPageProps) {
-  const [activeFilter, setActiveFilter] = useState<'all' | 'hotels' | 'restaurants' | 'activities' | 'destinations'>('all');
+// Mapper la catégorie frontend vers TypeLieu backend
+const categoryToTypeLieu = (category: SearchCategory): TypeLieu | undefined => {
+  switch (category) {
+    case 'hotels': return 'HOTEL' as TypeLieu;
+    case 'restaurants': return 'RESTAURATION' as TypeLieu;
+    case 'activities': return 'SITE_TOURISTIQUE' as TypeLieu;
+    default: return undefined;
+  }
+};
+
+// Configuration des catégories
+const categories = [
+  { value: 'all' as SearchCategory, label: 'Tout', icon: Grid3X3, color: 'emerald' },
+  { value: 'hotels' as SearchCategory, label: 'Hôtels', icon: Hotel, color: 'blue' },
+  { value: 'restaurants' as SearchCategory, label: 'Restaurants', icon: Utensils, color: 'orange' },
+  { value: 'activities' as SearchCategory, label: 'Activités', icon: Compass, color: 'purple' },
+];
+
+export default function SearchResultsPage({ 
+  searchQuery, 
+  initialCategory = 'all',
+  onBack, 
+  onShowDetails 
+}: SearchResultsPageProps) {
+  const [activeCategory, setActiveCategory] = useState<SearchCategory>(initialCategory);
   const [isLoading, setIsLoading] = useState(true);
-  const [apiResults, setApiResults] = useState<Etablissement[]>([]);
+  const [results, setResults] = useState<DetailsItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+  const [sortBy, setSortBy] = useState<'relevance' | 'rating' | 'name'>('relevance');
 
-  // Charger les résultats de recherche depuis l'API
-  useEffect(() => {
-    const loadResults = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        let response;
-        
-        if (searchQuery.trim()) {
-          // Recherche par texte
-          response = await searchEtablissements(searchQuery, 0, 50);
-        } else {
-          // Charger tous les établissements si pas de requête
-          response = await getAllEtablissements(0, 50);
-        }
-        
-        if (response.success && response.data) {
-          setApiResults(response.data.content);
-        } else {
-          // Fallback vers les données statiques
-          setApiResults([]);
-        }
-      } catch (err) {
-        setError('Erreur lors de la recherche');
-        setApiResults([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadResults();
-  }, [searchQuery]);
+  // Fonction de recherche
+  const performSearch = useCallback(async (query: string, category: SearchCategory) => {
+    setIsLoading(true);
+    setError(null);
 
-  // Charger par catégorie quand le filtre change
-  useEffect(() => {
-    const loadByCategory = async () => {
-      if (activeFilter === 'all') return;
-      
-      setIsLoading(true);
-      
-      try {
-        const categoryMap: Record<string, EtablissementCategorie> = {
-          hotels: 'HOTEL',
-          restaurants: 'RESTAURANT',
-          activities: 'ACTIVITE',
-          destinations: 'DESTINATION'
+    try {
+      let items: EtablissementListItem[] = [];
+      const typeLieu = categoryToTypeLieu(category);
+
+      if (query.trim() || typeLieu) {
+        // Utiliser la recherche avec les bons paramètres (objet SearchParams)
+        const searchParams: SearchParams = {
+          query: query.trim() || undefined,
+          categorie: typeLieu,
+          page: 0,
+          size: 50,
         };
         
-        const categorie = categoryMap[activeFilter];
-        if (categorie) {
-          const response = await getEtablissementsByCategorie(categorie, 0, 50);
-          if (response.success && response.data) {
-            // Filtrer aussi par la recherche si présente
-            let results = response.data.content;
-            if (searchQuery.trim()) {
-              const query = searchQuery.toLowerCase();
-              results = results.filter(e => 
-                e.nom.toLowerCase().includes(query) ||
-                e.ville?.toLowerCase().includes(query) ||
-                e.description?.toLowerCase().includes(query)
-              );
-            }
-            setApiResults(results);
-          }
+        const response = await searchEtablissements(searchParams);
+        
+        if (response.success && response.data) {
+          items = response.data.etablissements || [];
         }
-      } catch (err) {
-        // Ignorer les erreurs de filtre
-      } finally {
-        setIsLoading(false);
+      } else {
+        // Charger tous les établissements
+        const response = await getAllEtablissements(0, 50);
+        if (response.success && response.data) {
+          items = response.data.content || [];
+        }
       }
-    };
-    
-    if (activeFilter !== 'all') {
-      loadByCategory();
+
+      // Convertir en DetailsItem
+      const detailsItems = items.map(etablissementToDetailsItem);
+
+      // Trier selon le critère sélectionné
+      const sortedItems = [...detailsItems].sort((a, b) => {
+        switch (sortBy) {
+          case 'rating':
+            return (b.rating || 0) - (a.rating || 0);
+          case 'name':
+            return a.name.localeCompare(b.name);
+          default:
+            return 0;
+        }
+      });
+
+      setResults(sortedItems);
+    } catch (err) {
+      console.error('Erreur de recherche:', err);
+      setError('Une erreur est survenue lors de la recherche. Veuillez réessayer.');
+      setResults([]);
+    } finally {
+      setIsLoading(false);
     }
-  }, [activeFilter, searchQuery]);
+  }, [sortBy]);
 
-  // Données statiques de fallback
-  const staticItems: DetailsItem[] = [
-    // Hôtels
-    {
-      id: '1',
-      name: 'Hôtel La Falaise',
-      category: 'hotels',
-      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800',
-      rating: 4.8,
-      description: 'Hôtel de luxe avec vue panoramique sur Yaoundé',
-      location: 'Yaoundé, Centre',
-      price: '85 000 FCFA/nuit',
-      phone: '+237 222 23 36 86',
-      email: 'contact@lafalaise.cm',
-      amenities: ['WiFi', 'Piscine', 'Restaurant', 'Spa', 'Parking']
-    },
-    {
-      id: '2',
-      name: 'Hilton Douala',
-      category: 'hotels',
-      image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800',
-      rating: 4.9,
-      description: 'Hôtel international de standing au cœur de Douala',
-      location: 'Douala, Littoral',
-      price: '120 000 FCFA/nuit',
-      phone: '+237 233 42 46 46',
-      email: 'douala@hilton.com',
-      amenities: ['WiFi', 'Piscine', 'Salle de sport', 'Restaurant', 'Bar']
-    },
-    {
-      id: '3',
-      name: 'Tou\'Ngou Hotel',
-      category: 'hotels',
-      image: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800',
-      rating: 4.5,
-      description: 'Complexe hôtelier écologique à Kribi',
-      location: 'Kribi, Sud',
-      price: '65 000 FCFA/nuit',
-      phone: '+237 243 46 12 34',
-      email: 'info@toungou.cm',
-      amenities: ['Plage privée', 'WiFi', 'Restaurant', 'Piscine']
-    },
-    // Restaurants
-    {
-      id: '4',
-      name: 'La Terrasse',
-      category: 'restaurants',
-      image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800',
-      rating: 4.7,
-      description: 'Cuisine française et camerounaise raffinée',
-      location: 'Yaoundé, Centre',
-      cuisine: 'Française & Camerounaise',
-      openingHours: '12h - 23h',
-      phone: '+237 222 21 45 67'
-    },
-    {
-      id: '5',
-      name: 'Le Biniou',
-      category: 'restaurants',
-      image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800',
-      rating: 4.6,
-      description: 'Spécialités de fruits de mer et poissons',
-      location: 'Douala, Littoral',
-      cuisine: 'Fruits de mer',
-      openingHours: '11h - 22h30',
-      phone: '+237 233 42 78 90'
-    },
-    // Activités
-    {
-      id: '6',
-      name: 'Ascension du Mont Cameroun',
-      category: 'activities',
-      image: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800',
-      rating: 4.9,
-      description: 'Randonnée guidée vers le sommet du Mont Cameroun',
-      location: 'Buea, Sud-Ouest',
-      duration: '2-3 jours',
-      participants: '4-12 personnes',
-      price: '150 000 FCFA/personne'
-    },
-    {
-      id: '7',
-      name: 'Safari Parc National de Waza',
-      category: 'activities',
-      image: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=800',
-      rating: 4.8,
-      description: 'Safari photo dans la réserve de Waza',
-      location: 'Waza, Extrême-Nord',
-      duration: '1 journée',
-      participants: '2-6 personnes',
-      price: '80 000 FCFA/personne'
-    },
-    {
-      id: '8',
-      name: 'Visite des Chutes de la Lobé',
-      category: 'activities',
-      image: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=800',
-      rating: 4.7,
-      description: 'Découverte des cascades qui se jettent dans l\'océan',
-      location: 'Kribi, Sud',
-      duration: 'Demi-journée',
-      participants: '2-20 personnes',
-      price: '25 000 FCFA/personne'
-    },
-    {
-      id: '9',
-      name: 'Plongée à Limbé',
-      category: 'activities',
-      image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800',
-      rating: 4.6,
-      description: 'Session de plongée sous-marine avec instructeur',
-      location: 'Limbé, Sud-Ouest',
-      duration: '3 heures',
-      participants: '1-4 personnes',
-      price: '45 000 FCFA/personne'
-    },
-    {
-      id: '10',
-      name: 'Visite du Palais Royal de Foumban',
-      category: 'popular',
-      image: 'https://images.unsplash.com/photo-1523568129082-c691c7c35649?w=800',
-      rating: 4.8,
-      description: 'Découverte du patrimoine culturel Bamoun',
-      location: 'Foumban, Ouest',
-      duration: '2 heures',
-      price: '5 000 FCFA/personne'
-    },
-    {
-      id: '11',
-      name: 'Plages de Kribi',
-      category: 'popular',
-      image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800',
-      rating: 4.9,
-      description: 'Plages de sable fin bordées de cocotiers',
-      location: 'Kribi, Sud',
-      detailedDescription: 'Les plages de Kribi comptent parmi les plus belles du Cameroun avec leur sable blanc et leurs eaux turquoise.'
-    },
-    {
-      id: '12',
-      name: 'Lac Nyos',
-      category: 'popular',
-      image: 'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=800',
-      rating: 4.5,
-      description: 'Lac de cratère mystérieux et magnifique',
-      location: 'Nord-Ouest',
-      detailedDescription: 'Le Lac Nyos est un lac de cratère volcanique situé dans la région du Nord-Ouest du Cameroun.'
-    }
-  ];
+  // Effet pour la recherche initiale et quand les paramètres changent
+  useEffect(() => {
+    performSearch(localSearchQuery, activeCategory);
+  }, [localSearchQuery, activeCategory, performSearch]);
 
-  // Combiner les résultats de l'API avec les données statiques
-  const allItems: DetailsItem[] = [
-    ...apiResults.map(etablissementToDetailsItem),
-    ...(apiResults.length === 0 ? staticItems : [])
-  ];
+  // Mettre à jour la recherche locale quand la prop change
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery]);
 
-  // Filtrer les résultats par recherche
-  const filterBySearch = (items: DetailsItem[]) => {
-    if (!searchQuery.trim()) return items;
-    
-    const query = searchQuery.toLowerCase();
-    return items.filter(item => 
-      item.name.toLowerCase().includes(query) ||
-      item.location.toLowerCase().includes(query) ||
-      item.description.toLowerCase().includes(query) ||
-      (item.cuisine && item.cuisine.toLowerCase().includes(query))
-    );
+  // Handler de recherche locale
+  const handleLocalSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    performSearch(localSearchQuery, activeCategory);
   };
 
-  // Filtrer par catégorie
-  const filterByCategory = (items: DetailsItem[]) => {
-    if (activeFilter === 'all') return items;
-    if (activeFilter === 'destinations') {
-      return items.filter(item => item.category === 'popular');
-    }
-    return items.filter(item => item.category === activeFilter);
+  // Handler de changement de catégorie
+  const handleCategoryChange = (category: SearchCategory) => {
+    setActiveCategory(category);
   };
 
-  const filteredResults = filterByCategory(filterBySearch(allItems));
-
+  // Obtenir le label de la catégorie
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, string> = {
       hotels: 'Hôtel',
       restaurants: 'Restaurant',
       activities: 'Activité',
-      popular: 'Destination',
-      events: 'Événement'
+      popular: 'Lieu populaire',
     };
     return labels[category] || 'Lieu';
   };
 
+  // Obtenir la couleur de la catégorie
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      hotels: 'bg-blue-100 text-blue-700',
+      restaurants: 'bg-orange-100 text-orange-700',
+      activities: 'bg-purple-100 text-purple-700',
+      popular: 'bg-emerald-100 text-emerald-700',
+    };
+    return colors[category] || 'bg-gray-100 text-gray-700';
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm sticky top-16 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-gray-700 hover:text-green-700 transition mb-4"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Retour</span>
-          </button>
-          
-          <div className="flex items-center gap-3 mb-4">
-            <Search className="w-6 h-6 text-green-700" />
-            <h1 className="text-2xl text-gray-900">
-              Résultats pour "{searchQuery}"
-            </h1>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      {/* Header avec recherche */}
+      <div className="bg-white shadow-md sticky top-16 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Bouton retour et titre */}
+          <div className="py-4 flex items-center justify-between border-b border-gray-100">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 text-gray-600 hover:text-emerald-600 transition group"
+            >
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+              <span className="font-medium">Retour à l'accueil</span>
+            </button>
           </div>
-          
-          <p className="text-gray-600">
-            {filteredResults.length} résultat{filteredResults.length > 1 ? 's' : ''} trouvé{filteredResults.length > 1 ? 's' : ''}
-          </p>
+
+          {/* Barre de recherche */}
+          <div className="py-4">
+            <form onSubmit={handleLocalSearch} className="flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={localSearchQuery}
+                  onChange={(e) => setLocalSearchQuery(e.target.value)}
+                  placeholder="Rechercher hôtels, restaurants, activités..."
+                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+                />
+                {localSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setLocalSearchQuery('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+              <button
+                type="submit"
+                className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-medium flex items-center gap-2"
+              >
+                <Search className="w-5 h-5" />
+                <span className="hidden sm:inline">Rechercher</span>
+              </button>
+            </form>
+          </div>
+
+          {/* Onglets de catégorie */}
+          <div className="flex items-center gap-2 pb-4 overflow-x-auto scrollbar-hide">
+            {categories.map((cat) => {
+              const Icon = cat.icon;
+              const isActive = activeCategory === cat.value;
+              return (
+                <button
+                  key={cat.value}
+                  onClick={() => handleCategoryChange(cat.value)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full transition whitespace-nowrap font-medium ${
+                    isActive
+                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{cat.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
+      {/* Contenu principal */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filtres */}
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Filter className="w-5 h-5 text-gray-700" />
-            <h2 className="text-lg text-gray-900">Filtrer par catégorie</h2>
+        {/* Résumé et tri */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {localSearchQuery ? (
+                <>Résultats pour "<span className="text-emerald-600">{localSearchQuery}</span>"</>
+              ) : (
+                <>Tous les {activeCategory === 'all' ? 'établissements' : categories.find(c => c.value === activeCategory)?.label.toLowerCase()}</>
+              )}
+            </h1>
+            <p className="text-gray-500 mt-1">
+              {isLoading ? 'Recherche en cours...' : `${results.length} résultat${results.length > 1 ? 's' : ''} trouvé${results.length > 1 ? 's' : ''}`}
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { value: 'all', label: 'Tout' },
-              { value: 'hotels', label: 'Hôtels' },
-              { value: 'restaurants', label: 'Restaurants' },
-              { value: 'activities', label: 'Activités' },
-              { value: 'destinations', label: 'Destinations' }
-            ].map(filter => (
-              <button
-                key={filter.value}
-                onClick={() => setActiveFilter(filter.value as any)}
-                className={`px-4 py-2 rounded-lg transition ${
-                  activeFilter === filter.value
-                    ? 'bg-green-700 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+
+          {/* Options de tri */}
+          <div className="flex items-center gap-3">
+            <span className="text-gray-500 text-sm">Trier par:</span>
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="appearance-none px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none cursor-pointer"
               >
-                {filter.label}
-              </button>
-            ))}
+                <option value="relevance">Pertinence</option>
+                <option value="rating">Note</option>
+                <option value="name">Nom (A-Z)</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
           </div>
         </div>
 
-        {/* Résultats */}
-        {isLoading ? (
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-            <Loader2 className="w-12 h-12 text-green-700 mx-auto mb-4 animate-spin" />
-            <h3 className="text-xl text-gray-900 mb-2">Recherche en cours...</h3>
-            <p className="text-gray-600">
-              Nous cherchons les meilleurs résultats pour vous
-            </p>
+        {/* État de chargement */}
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-emerald-200 rounded-full"></div>
+              <div className="absolute top-0 left-0 w-16 h-16 border-4 border-emerald-600 rounded-full animate-spin border-t-transparent"></div>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mt-6">Recherche en cours...</h3>
+            <p className="text-gray-500 mt-2">Nous trouvons les meilleurs résultats pour vous</p>
           </div>
-        ) : error ? (
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-            <Search className="w-16 h-16 text-red-300 mx-auto mb-4" />
-            <h3 className="text-xl text-gray-900 mb-2">Erreur de recherche</h3>
+        )}
+
+        {/* Erreur */}
+        {!isLoading && error && (
+          <div className="bg-red-50 rounded-2xl p-8 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <X className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Erreur de recherche</h3>
             <p className="text-gray-600">{error}</p>
+            <button
+              onClick={() => performSearch(localSearchQuery, activeCategory)}
+              className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            >
+              Réessayer
+            </button>
           </div>
-        ) : filteredResults.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-            <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl text-gray-900 mb-2">Aucun résultat trouvé</h3>
-            <p className="text-gray-600">
-              Essayez avec d'autres mots-clés ou modifiez vos filtres
+        )}
+
+        {/* Aucun résultat */}
+        {!isLoading && !error && results.length === 0 && (
+          <div className="bg-gray-50 rounded-2xl p-12 text-center">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Search className="w-10 h-10 text-gray-400" />
+            </div>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-3">Aucun résultat trouvé</h3>
+            <p className="text-gray-500 max-w-md mx-auto">
+              Nous n'avons pas trouvé de résultats pour "{localSearchQuery}". 
+              Essayez avec d'autres mots-clés ou explorez nos catégories.
             </p>
+            <div className="flex flex-wrap justify-center gap-3 mt-6">
+              {categories.filter(c => c.value !== 'all').map((cat) => {
+                const Icon = cat.icon;
+                return (
+                  <button
+                    key={cat.value}
+                    onClick={() => {
+                      setLocalSearchQuery('');
+                      handleCategoryChange(cat.value);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-emerald-500 hover:text-emerald-600 transition"
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>Voir les {cat.label.toLowerCase()}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        ) : (
+        )}
+
+        {/* Grille de résultats */}
+        {!isLoading && !error && results.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredResults.map(item => (
+            {results.map((item) => (
               <div
                 key={item.id}
                 onClick={() => onShowDetails(item)}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all cursor-pointer group"
+                className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group border border-gray-100"
               >
-                <div className="relative h-48 overflow-hidden">
+                {/* Image */}
+                <div className="relative h-52 overflow-hidden">
                   <ImageWithFallback
                     src={item.image}
                     alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
-                  <div className="absolute top-3 left-3">
-                    <span className="px-3 py-1 bg-white/90 backdrop-blur-sm text-green-700 rounded-full text-sm">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                  
+                  {/* Badge catégorie */}
+                  <div className="absolute top-4 left-4">
+                    <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${getCategoryColor(item.category)}`}>
                       {getCategoryLabel(item.category)}
                     </span>
                   </div>
-                  {item.rating && (
-                    <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
-                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                      <span className="text-sm">{item.rating}</span>
+
+                  {/* Note */}
+                  {item.rating > 0 && (
+                    <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg">
+                      <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                      <span className="font-semibold text-gray-900">{item.rating.toFixed(1)}</span>
                     </div>
                   )}
+
+                  {/* Localisation en bas de l'image */}
+                  <div className="absolute bottom-4 left-4 flex items-center gap-2 text-white">
+                    <MapPin className="w-4 h-4" />
+                    <span className="text-sm font-medium">{item.location}</span>
+                  </div>
                 </div>
-                
-                <div className="p-4">
-                  <h3 className="text-xl text-gray-900 mb-2 group-hover:text-green-700 transition">
+
+                {/* Contenu */}
+                <div className="p-5">
+                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-emerald-600 transition line-clamp-1">
                     {item.name}
                   </h3>
-                  <div className="flex items-center gap-2 text-gray-600 mb-3">
-                    <MapPin className="w-4 h-4 text-green-700" />
-                    <span className="text-sm">{item.location}</span>
-                  </div>
-                  <p className="text-gray-700 text-sm line-clamp-2 mb-3">
+                  <p className="text-gray-600 text-sm mt-2 line-clamp-2">
                     {item.description}
                   </p>
+
+                  {/* Prix si disponible */}
                   {item.price && (
-                    <div className="pt-3 border-t">
-                      <span className="text-green-700">{item.price}</span>
+                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                      <span className="text-emerald-600 font-bold">{item.price}</span>
+                      <span className="text-sm text-gray-400">par nuit</span>
                     </div>
                   )}
                 </div>

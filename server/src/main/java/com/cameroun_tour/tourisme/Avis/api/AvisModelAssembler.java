@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.cameroun_tour.tourisme.Avis.Avis;
 import com.cameroun_tour.tourisme.Avis.model.AvisDto;
+import com.cameroun_tour.tourisme.Avis.model.AvisUpdateDto;
 
 @Component
 public class AvisModelAssembler extends RepresentationModelAssemblerSupport<Avis, AvisDto> {
@@ -32,7 +33,14 @@ public class AvisModelAssembler extends RepresentationModelAssemblerSupport<Avis
                 .auteurPhoto(entity.getAuteur().getPhotoProfile())
                 .build();
 
-        dto.add(linkTo(methodOn(AvisController.class).modifierUnAvis(dto)).withSelfRel());
+        // Créer un AvisUpdateDto pour le lien HATEOAS
+        AvisUpdateDto updateDto = AvisUpdateDto.builder()
+                .publicId(entity.getPublicId())
+                .message(entity.getMessage())
+                .note(entity.getNote())
+                .build();
+        
+        dto.add(linkTo(methodOn(AvisController.class).modifierUnAvis(updateDto)).withSelfRel());
         dto.add(linkTo(methodOn(AvisController.class).supprimerMonAvis(entity.getPublicId())).withRel("delete"));
 
         return dto;

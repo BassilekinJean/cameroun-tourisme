@@ -40,6 +40,7 @@ export default function App() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [selectedDetailsItem, setSelectedDetailsItem] = useState<DetailsItem | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchCategory, setSearchCategory] = useState<'all' | 'hotels' | 'restaurants' | 'activities'>('all');
 
   // Vérifier l'authentification au démarrage (via cookie HttpOnly)
   useEffect(() => {
@@ -301,8 +302,9 @@ export default function App() {
     setCurrentPage('contact');
   };
 
-  const handleSearch = (query: string) => {
+  const handleSearch = (query: string, category?: 'all' | 'hotels' | 'restaurants' | 'activities') => {
     setSearchQuery(query);
+    if (category) setSearchCategory(category);
     setCurrentPage('search');
   };
 
@@ -442,6 +444,7 @@ export default function App() {
           currentUser={currentUser}
           reviews={reviews}
           onAddReview={handleAddReview}
+          onUpdateUser={handleUpdateUser}
         />
       )}
       
@@ -460,6 +463,7 @@ export default function App() {
       {currentPage === 'search' && (
         <SearchResultsPage 
           searchQuery={searchQuery}
+          initialCategory={searchCategory}
           onBack={handleBackToHome}
           onShowDetails={handleDetailsPage}
         />

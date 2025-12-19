@@ -79,6 +79,15 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             
+            // Important: Retourner 401 au lieu de rediriger vers OAuth pour les API
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setContentType("application/json");
+                    response.setStatus(401);
+                    response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Vous devez être connecté pour effectuer cette action\"}");
+                })
+            )
+            
             .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class)
             .oauth2Login(oauth2 -> { 
                 Oauth2AuthenticationSuccessHandler handler = oAuth2SuccessHandlerProvider.getIfAvailable();
@@ -102,10 +111,11 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
     
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173"));
-        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
+        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         corsConfiguration.setAllowCredentials(true);
         corsConfiguration.setAllowedHeaders(List.of("*")); 
         corsConfiguration.setMaxAge(3600L);

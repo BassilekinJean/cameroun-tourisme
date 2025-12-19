@@ -61,10 +61,14 @@ public class UtilisateurController {
     }
 
     @PatchMapping("/addFavoris/{etablissementId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> toggleFavori(
             @AuthenticationPrincipal UtilisateurEntity currentUser,
             @PathVariable UUID etablissementId) {
         
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         userService.toggleFavori(currentUser.getPublicId(), etablissementId);
         return ResponseEntity.ok().build();
     }
