@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cameroun_tour.tourisme.Avis.Avis;
-import com.cameroun_tour.tourisme.Avis.api.AvisRepository;
+import com.cameroun_tour.tourisme.Avis.AvisServiceApi;
 import com.cameroun_tour.tourisme.etablissement.Etablissement;
 import com.cameroun_tour.tourisme.etablissement.model.EtablissementUpdateDto;
 
@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class EtablissementPanelServiceImpl implements EtablissementPanelService {
 
     private final EtablissementRepository etablissementRepository;
-    private final AvisRepository avisRepository;
+    private final AvisServiceApi avisService;
 
     @Override
     @Transactional(readOnly = true)
@@ -37,10 +37,10 @@ public class EtablissementPanelServiceImpl implements EtablissementPanelService 
         Etablissement etablissement = getEtablissementByOwnerEmail(ownerEmail);
         
         // Compter les avis
-        long totalAvis = avisRepository.findByLieuConcerne_Id(etablissement.getId(), PageRequest.of(0, 1)).getTotalElements();
+        long totalAvis = avisService.listerLesAvisLieu(etablissement.getId(), PageRequest.of(0, 1)).getTotalElements();
         
         // Calculer la note moyenne
-        Page<Avis> allAvis = avisRepository.findByLieuConcerne_Id(etablissement.getId(), PageRequest.of(0, 1000));
+        Page<Avis> allAvis = avisService.listerLesAvisLieu(etablissement.getId(), PageRequest.of(0, 1000));
         double avgRating = allAvis.getContent().stream()
                 .mapToInt(Avis::getNote)
                 .average()
@@ -94,6 +94,6 @@ public class EtablissementPanelServiceImpl implements EtablissementPanelService 
         
         PageRequest pageable = PageRequest.of(page, size, sortOrder);
         
-        return avisRepository.findByLieuConcerne_Id(etablissement.getId(), pageable);
+        return avisService.listerLesAvisLieu(etablissement.getId(), pageable);
     }
 }

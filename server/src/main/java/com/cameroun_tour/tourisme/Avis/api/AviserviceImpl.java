@@ -25,7 +25,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Tag(name = "Service de gestion des Avis", description = "Se service implémente l'ensemble de la logique métier lié aux Avis")
@@ -83,11 +85,7 @@ public class AviserviceImpl implements AvisServiceApi {
         avisRepository.delete(avis.get());
     }
 
-    public Page<Avis> listerLesAvisLieu(Long lieuId, int page, int size, String sortBy, String sortDir) {
-        var sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
-                                                : Sort.by(sortBy).descending();
-
-        var pageable = PageRequest.of(page, size, sort);
+    public Page<Avis> listerLesAvisLieu(Long lieuId, PageRequest pageable) {
 
         return avisRepository.findByLieuConcerne_Id(lieuId, pageable);
     }
@@ -207,6 +205,7 @@ public class AviserviceImpl implements AvisServiceApi {
                 deleted++;
             } catch (Exception e) {
                 // Log et continuer
+                log.error("Failed to delete avis with ID: {}. Reason: {}", id, e.getMessage());
             }
         }
         return deleted;
@@ -228,5 +227,10 @@ public class AviserviceImpl implements AvisServiceApi {
                 .etablissementId(avis.getLieuConcerne() != null ? avis.getLieuConcerne().getPublicId() : null)
                 .etablissementNom(avis.getLieuConcerne() != null ? avis.getLieuConcerne().getNom() : null)
                 .build();
+    }
+
+    @Override
+    public Double findAverageRatingByEtablissementId(Long etablissementId) {
+        return avisRepository.findAverageRatingByEtablissementId(etablissementId);
     }
 }
