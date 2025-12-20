@@ -23,6 +23,11 @@ public interface AvisRepository extends JpaRepository<Avis, Long>{
     Page<Avis> findByLieuConcerne_Id(Long lieuId, Pageable pageable);
 
     /**
+     * Recherche les avis par publicId de l'établissement
+     */
+    Page<Avis> findByLieuConcerne_PublicId(UUID etablissementPublicId, Pageable pageable);
+
+    /**
      * Calcule la note moyenne pour un établissement
      */
     @Query("SELECT AVG(a.note) FROM Avis a WHERE a.lieuConcerne.id = :etablissementId")

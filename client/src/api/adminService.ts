@@ -3,7 +3,7 @@
  * Gère les opérations d'administration (Users, Avis, Établissements)
  */
 
-import apiClient, { getErrorMessage } from './config';
+import apiClient, { getErrorMessage, getPhotoUrl } from './config';
 import type {
   User,
   Avis,
@@ -18,6 +18,19 @@ import type {
 } from './types';
 
 const ADMIN_BASE = '/admin';
+
+/**
+ * Transforme un utilisateur admin en mappant publicId vers id
+ * et en transformant les URLs de photos
+ */
+const transformAdminUser = (user: any): any => {
+  return {
+    ...user,
+    id: user.publicId || user.id, // Mapper publicId vers id
+    photoProfile: getPhotoUrl(user.photoProfile), // Transformer l'URL de la photo
+    favorisIds: user.favorisIds ? user.favorisIds.map((f: any) => typeof f === 'string' ? f : f.toString()) : [],
+  };
+};
 
 // ==================== STATISTIQUES ====================
 
@@ -52,12 +65,17 @@ export const getAllUsers = async (
   search?: string
 ): Promise<ApiResponse<PageResponse<User>>> => {
   try {
-    const response = await apiClient.get<PageResponse<User>>(`${ADMIN_BASE}/users`, {
+    const response = await apiClient.get<PageResponse<any>>(`${ADMIN_BASE}/users`, {
       params: { page, size, sort, sortDir, search },
     });
+    // Transformer les utilisateurs pour mapper publicId vers id
+    const transformedData = {
+      ...response.data,
+      content: response.data.content?.map(transformAdminUser) || [],
+    };
     return {
       success: true,
-      data: response.data,
+      data: transformedData,
     };
   } catch (error) {
     return {

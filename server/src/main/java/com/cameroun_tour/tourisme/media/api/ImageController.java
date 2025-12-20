@@ -128,6 +128,41 @@ public class ImageController {
     }
 
     /**
+     * Récupère une photo de profil utilisateur
+     * GET /api/media/profiles/{filename}
+     */
+    @GetMapping("/profiles/{filename}")
+    public ResponseEntity<byte[]> getProfilePhoto(@PathVariable String filename) {
+        try {
+            java.nio.file.Path filePath = java.nio.file.Paths.get("uploads/profiles").resolve(filename);
+            if (!java.nio.file.Files.exists(filePath)) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            byte[] content = java.nio.file.Files.readAllBytes(filePath);
+            
+            // Déterminer le type MIME
+            String mimeType = "image/jpeg";
+            if (filename.toLowerCase().endsWith(".png")) {
+                mimeType = "image/png";
+            } else if (filename.toLowerCase().endsWith(".gif")) {
+                mimeType = "image/gif";
+            } else if (filename.toLowerCase().endsWith(".webp")) {
+                mimeType = "image/webp";
+            }
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(mimeType));
+            headers.setContentLength(content.length);
+            
+            return new ResponseEntity<>(content, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            log.error("Erreur lors de la récupération de la photo de profil", e);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
      * Récupère les images uploadées par l'utilisateur connecté
      * GET /api/media/my-uploads
      */

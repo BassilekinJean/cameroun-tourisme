@@ -252,7 +252,8 @@ public class AuthServiceImpl implements AuthentificationService {
             user.getUserEmail(),
             user.getPaysOrigine(),
             user.getPhotoProfile(),
-            user.getFavorisIds() // Directement les UUIDs, plus de mapping nécessaire
+            user.getFavorisIds(), // Directement les UUIDs, plus de mapping nécessaire
+            user.getRole() // Ajouter le rôle pour l'affichage du panel admin/établissement
         );
     }
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, User, Eye, EyeOff, Shield, KeyRound, Loader2, CheckCircle, AlertCircle, Globe, Sparkles, ArrowRight, Camera } from 'lucide-react';
-import { login, register, sendOtp, verifyOtp, forgotPassword, resetPassword } from '../api/authService';
+import { login, loginEtablissement, register, sendOtp, verifyOtp, forgotPassword, resetPassword } from '../api/authService';
 import { API_BASE_URL } from '../api/config';
 import type { User as UserType } from '../api/types';
 
@@ -36,6 +36,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  
+  // Type de connexion (utilisateur ou établissement)
+  const [loginAsEtablissement, setLoginAsEtablissement] = useState(false);
   
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -97,6 +100,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
     setShowPassword(false);
     setShowConfirmPassword(false);
     setShowNewPassword(false);
+    setLoginAsEtablissement(false);
     setError(null);
     setSuccessMessage(null);
   };
@@ -126,10 +130,16 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
     setError(null);
     
     try {
-      const response = await login({
-        email: loginData.email,
-        password: loginData.password
-      });
+      // Utiliser le bon endpoint selon le type de connexion
+      const response = loginAsEtablissement 
+        ? await loginEtablissement({
+            email: loginData.email,
+            password: loginData.password
+          })
+        : await login({
+            email: loginData.email,
+            password: loginData.password
+          });
       
       if (response.success && response.user) {
         localStorage.setItem('camertrip_user', JSON.stringify(response.user));
@@ -442,6 +452,36 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   <p className="mt-1 text-gray-500 text-sm">Connectez-vous pour explorer le Cameroun</p>
                 </div>
 
+                {/* Toggle Utilisateur / Établissement */}
+                <div className="flex justify-center mb-5">
+                  <div className="bg-gray-100 p-1 rounded-xl flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setLoginAsEtablissement(false)}
+                      className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-300 ${
+                        !loginAsEtablissement 
+                          ? 'bg-white text-green-700 shadow-md' 
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <User className="w-3.5 h-3.5 inline mr-1.5" />
+                      Utilisateur
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLoginAsEtablissement(true)}
+                      className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-300 ${
+                        loginAsEtablissement 
+                          ? 'bg-white text-blue-700 shadow-md' 
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <Shield className="w-3.5 h-3.5 inline mr-1.5" />
+                      Établissement
+                    </button>
+                  </div>
+                </div>
+
                 {/* Error Alert */}
                 {error && (
                   <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2 animate-in slide-in-from-top-2">
@@ -452,26 +492,30 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   </div>
                 )}
 
-                {/* Google OAuth Button */}
-                <button
-                  onClick={handleGoogleLogin}
-                  disabled={isLoading}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-3 bg-white border-2 border-gray-200 rounded-xl font-semibold text-gray-700 text-sm hover:bg-gray-50 hover:border-gray-300 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
-                >
-                  <GoogleLogo />
-                  <span>Continuer avec Google</span>
-                  <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                </button>
+                {/* Google OAuth Button - uniquement pour les utilisateurs */}
+                {!loginAsEtablissement && (
+                  <>
+                    <button
+                      onClick={handleGoogleLogin}
+                      disabled={isLoading}
+                      className="w-full flex items-center justify-center gap-2 px-3 py-3 bg-white border-2 border-gray-200 rounded-xl font-semibold text-gray-700 text-sm hover:bg-gray-50 hover:border-gray-300 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
+                    >
+                      <GoogleLogo />
+                      <span>Continuer avec Google</span>
+                      <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </button>
 
-                {/* Divider */}
-                <div className="relative my-5">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200" />
-                  </div>
-                  <div className="relative flex justify-center">
-                    <span className="px-3 bg-white text-xs text-gray-400 font-medium">ou avec votre email</span>
-                  </div>
-                </div>
+                    {/* Divider */}
+                    <div className="relative my-5">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-200" />
+                      </div>
+                      <div className="relative flex justify-center">
+                        <span className="px-3 bg-white text-xs text-gray-400 font-medium">ou avec votre email</span>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Login Form */}
                 <form onSubmit={handleLogin} className="space-y-4">

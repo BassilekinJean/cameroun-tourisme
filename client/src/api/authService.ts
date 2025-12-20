@@ -3,8 +3,8 @@
  * Gère inscription, connexion, déconnexion et rafraîchissement de token
  */
 
-import apiClient, { getErrorMessage } from './config';
-import type { User, UserRegistrationData, UserLoginData, AuthResponse, UtilisateurDto, ApiResponse } from './types';
+import apiClient, { getErrorMessage, getPhotoUrl } from './config';
+import type { User, UserRegistrationData, UserLoginData, AuthResponse, UtilisateurDto, ApiResponse, EtablissementAuthDto } from './types';
 
 // Le backend utilise /api/auth pour l'authentification
 const AUTH_BASE = '/auth';
@@ -18,8 +18,24 @@ const transformUserResponse = (dto: UtilisateurDto): User => {
     nomComplet: dto.nomComplet,
     email: dto.email,
     paysOrigine: dto.paysOrigine,
-    photoProfile: dto.photoProfile,
+    photoProfile: getPhotoUrl(dto.photoProfile),
     favorisIds: dto.favorisIds || [],
+    role: dto.role,
+  };
+};
+
+/**
+ * Transforme EtablissementAuthDto (backend) en User (frontend)
+ * Permet une interface unifiée pour les utilisateurs et établissements
+ */
+const transformEtablissementResponse = (dto: EtablissementAuthDto): User => {
+  return {
+    id: dto.publicId,
+    nomComplet: dto.nom,
+    email: dto.email,
+    photoProfile: getPhotoUrl(dto.photoProfile),
+    favorisIds: [],
+    role: dto.role,
   };
 };
 
@@ -50,6 +66,26 @@ export const login = async (data: UserLoginData): Promise<AuthResponse> => {
   try {
     const response = await apiClient.post<UtilisateurDto>(`${AUTH_BASE}/login`, data);
     const user = transformUserResponse(response.data);
+    return {
+      success: true,
+      user,
+      message: 'Connexion réussie',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: getErrorMessage(error),
+    };
+  }
+};
+
+/**
+ * Connexion d'un établissement
+ */
+export const loginEtablissement = async (data: UserLoginData): Promise<AuthResponse> => {
+  try {
+    const response = await apiClient.post<EtablissementAuthDto>(`${AUTH_BASE}/etablissement/login`, data);
+    const user = transformEtablissementResponse(response.data);
     return {
       success: true,
       user,
@@ -205,6 +241,7 @@ export const resetPassword = async (
 export default {
   register,
   login,
+  loginEtablissement,
   logout,
   refreshToken,
   getCurrentUser,

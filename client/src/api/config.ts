@@ -8,6 +8,36 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 // URL de base de l'API backend
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
+// URL de base du serveur (sans /api)
+export const SERVER_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
+
+/**
+ * Transforme une URL de photo pour s'assurer qu'elle est complète
+ * Les photos uploadées localement sont stockées dans /api/media/profiles/
+ */
+export const getPhotoUrl = (photoPath?: string | null): string | undefined => {
+  if (!photoPath) return undefined;
+  
+  // Si c'est déjà une URL complète (http/https), la retourner telle quelle
+  if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+    return photoPath;
+  }
+  
+  // Si c'est un chemin relatif commençant par /profiles/, construire l'URL complète
+  if (photoPath.startsWith('/profiles/') || photoPath.startsWith('profiles/')) {
+    const cleanPath = photoPath.startsWith('/') ? photoPath : `/${photoPath}`;
+    return `${API_BASE_URL}/media${cleanPath}`;
+  }
+  
+  // Si c'est juste un nom de fichier, supposer qu'il est dans /profiles/
+  if (!photoPath.includes('/')) {
+    return `${API_BASE_URL}/media/profiles/${photoPath}`;
+  }
+  
+  // Sinon, retourner tel quel (pourrait être un chemin d'image externe)
+  return photoPath;
+};
+
 // Instance Axios configurée
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
