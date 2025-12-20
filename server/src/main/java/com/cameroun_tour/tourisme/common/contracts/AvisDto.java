@@ -1,4 +1,4 @@
-package com.cameroun_tour.tourisme.Avis.model;
+package com.cameroun_tour.tourisme.common.contracts;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -25,14 +25,24 @@ public class AvisDto extends RepresentationModel<AvisDto>{
     @NotBlank(message = "Veuillez saisir un message")
     private String message;
 
-    String auteurPhoto;
+    private String auteurPhoto;
     
     @NotBlank
-    String auteurName;
+    private String auteurName;
 
-    LocalDate dateCreation;
+    private LocalDate dateCreation;
 
-    int nombreFavoris;
+    private int nombreFavoris;
 
     private @Min(1) @Max(5) int note;
+
+    private int nombreLikes;
+
+    private UUID auteurId;
+
+    private String auteurEmail;
+
+    private UUID etablissementId;
+    
+    private String etablissementNom;
 }

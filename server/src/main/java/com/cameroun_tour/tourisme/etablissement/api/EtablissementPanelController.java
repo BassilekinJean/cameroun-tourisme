@@ -17,10 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.cameroun_tour.tourisme.Avis.Avis;
-import com.cameroun_tour.tourisme.Avis.AvisServiceApi;
+import com.cameroun_tour.tourisme.common.contracts.AvisDto;
 import com.cameroun_tour.tourisme.etablissement.Etablissement;
-import com.cameroun_tour.tourisme.etablissement.EtablissementServiceApi;
 import com.cameroun_tour.tourisme.etablissement.model.EtablissementResponse;
 import com.cameroun_tour.tourisme.etablissement.model.EtablissementUpdateDto;
 
@@ -40,9 +38,7 @@ import lombok.RequiredArgsConstructor;
 @Tag(name = "Panel Établissement", description = "Gestion d'un établissement par son propriétaire")
 public class EtablissementPanelController {
 
-    private final EtablissementServiceApi etablissementService;
     private final EtablissementPanelService panelService;
-    private final AvisServiceApi avisService;
 
     @GetMapping("/my-etablissement")
     @Operation(summary = "Mon établissement", description = "Récupère les informations de l'établissement du gestionnaire connecté")
@@ -72,7 +68,7 @@ public class EtablissementPanelController {
 
     @GetMapping(path = "/avis", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Liste des avis", description = "Récupère tous les avis de l'établissement")
-    public ResponseEntity<Page<Avis>> getAvis(
+    public ResponseEntity<Page<AvisDto>> getAvis(
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -80,7 +76,7 @@ public class EtablissementPanelController {
             @RequestParam(defaultValue = "desc") String sortDir) {
         
         String email = authentication.getName();
-        Page<Avis> avis = panelService.getEtablissementAvis(email, page, size, sort, sortDir);
+        Page<AvisDto> avis = panelService.getEtablissementAvis(email, page, size, sort, sortDir);
         return ResponseEntity.ok(avis);
     }
 

@@ -4,7 +4,7 @@ import java.util.Map;
 
 import org.springframework.data.domain.Page;
 
-import com.cameroun_tour.tourisme.Avis.Avis;
+import com.cameroun_tour.tourisme.common.contracts.AvisDto;
 import com.cameroun_tour.tourisme.etablissement.Etablissement;
 import com.cameroun_tour.tourisme.etablissement.model.EtablissementUpdateDto;
 
@@ -28,5 +28,5 @@ public interface EtablissementPanelService {
     /**
      * Récupère les avis de l'établissement
      */
-    Page<Avis> getEtablissementAvis(String ownerEmail, int page, int size, String sort, String sortDir);
+    Page<AvisDto> getEtablissementAvis(String ownerEmail, int page, int size, String sort, String sortDir);
 }
