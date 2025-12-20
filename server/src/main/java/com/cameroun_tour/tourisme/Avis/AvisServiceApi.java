@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import com.cameroun_tour.tourisme.Avis.model.AvisDto;
 import com.cameroun_tour.tourisme.Avis.model.AvisUpdateDto;
@@ -26,7 +27,9 @@ public interface AvisServiceApi {
 
     void supprimerUserAvis(UUID userId, UUID avisId);
 
-    Page<Avis> listerLesAvisLieu(Long lieuId, int page, int size, String sortBy, String sortDir);
+    
+
+    Page<Avis> listerLesAvisLieu(Long lieuId, PageRequest pageable);
 
     /**
      * Liste les avis d'un établissement par son publicId (UUID)
@@ -34,6 +37,8 @@ public interface AvisServiceApi {
     Page<Avis> listerLesAvisParPublicId(UUID etablissementPublicId, int page, int size, String sortBy, String sortDir);
 
     Page<AvisDto> utilisateurAvis(UUID userId, int page, int size, String sortBy, String sortDir);
+
+    Double findAverageRatingByEtablissementId(Long etablissementId);
 
     // ==================== MÉTHODES ADMIN ====================
 
