@@ -15,7 +15,7 @@ const validateImage = (file: File) => {
 const uploadToSupabase = async (file: File, bucket: string, filename: string): Promise<string> => {
   validateImage(file);
 
-  if (!filename) {
+  if (!filename || filename.trim() === '') {
     const fileExt = file.name.split('.').pop();
     filename = `${crypto.randomUUID()}.${fileExt}`;
   }
