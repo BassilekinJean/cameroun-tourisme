@@ -18,7 +18,7 @@ ALTER TABLE etablissement AUTO_INCREMENT = 1;
 INSERT INTO etablissement (public_id, nom, description, email, password, telephone, photo_profile, adresse, ville, categorie, nombre_favoris, latitude, longitude, created_at, updated_at)
 VALUES (
     UNHEX(REPLACE(UUID(), '-', '')),
-    'Hilton Yaoundé',
+    'Hilton  de Yaoundé',
     'Le Hilton Yaoundé est un hôtel 5 étoiles situé au cœur de la capitale camerounaise. Cet établissement de luxe offre une vue panoramique sur la ville, des chambres élégantes, un spa de classe mondiale.',
     'reservations@hiltonyaounde.cm',
     '$2a$10$YQGh8XXWyerwENuwIqJFi.F.bdOLoH.f2g/9FFmCLdvQrcNZydmI6',
