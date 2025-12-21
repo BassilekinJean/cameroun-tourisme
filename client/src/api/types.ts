@@ -264,7 +264,7 @@ export interface SearchParams {
 }
 
 export interface SearchResult {
-  etablissements: EtablissementListItem[];
+  content: EtablissementListItem[];
   totalResults: number;
   page: number;
   totalPages: number;

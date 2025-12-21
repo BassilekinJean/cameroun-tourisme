@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.cameroun_tour.tourisme.common.utils.ApiErrorResponse;
 
-@RestControllerAdvice(basePackages = "com.cameroun_tour.tourisme.evaluation")
+@RestControllerAdvice(basePackages = "com.cameroun_tour.tourisme.Avis")
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CommentaireExceptionHandler {
 

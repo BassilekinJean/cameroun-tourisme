@@ -149,8 +149,7 @@ public class AviserviceImpl implements AvisServiceApi {
         if (avis.isEmpty()) {
             throw new CommentNotFoundException("Avis introuvable");
         }
-        var a = avis.get();
-        return a;
+        return avis.get();
     }
 
     @Override

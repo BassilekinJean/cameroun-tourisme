@@ -84,7 +84,7 @@ export default function SearchResultsPage({
         const response = await searchEtablissements(searchParams);
         
         if (response.success && response.data) {
-          items = response.data.etablissements || [];
+          items = response.data.content || [];
         }
       } else {
         // Charger tous les établissements

@@ -43,9 +43,9 @@ public class AvisController {
     public ResponseEntity<AvisDto> getOneAvis(@RequestParam UUID publicUuid) {
         var avis = avisService.getOneAvis(publicUuid);
 
-        if (avis == null) {
-            return ResponseEntity.notFound().build();
-        }
+        // if (avis.equals(null)){
+        //     return ResponseEntity.notFound().build();
+        // }
 
         return ResponseEntity.ok(avisAssembler.toModel(avis));
     }

@@ -128,7 +128,7 @@ public class EtablissementController {
                 .collect(Collectors.toList());
         
         SearchResult searchResult = SearchResult.builder()
-                .etablissements(items)
+                .content(items)
                 .totalResults(results.getTotalElements())
                 .page(results.getNumber())
                 .totalPages(results.getTotalPages())
