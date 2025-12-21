@@ -75,6 +75,8 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/avis/**").permitAll()
                 // Endpoints de média/images - accès public en lecture
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/media/**").permitAll()
+                // Ressources statiques (Frontend React)
+                .requestMatchers("/", "/index.html", "/assets/**", "/*.ico", "/*.json", "/*.png", "/*.svg").permitAll()
                 // Tout le reste nécessite une authentification
                 .anyRequest().authenticated()
             )
