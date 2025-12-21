@@ -17,6 +17,8 @@ export enum TypeLieu {
   SITE_TOURISTIQUE = 'SITE_TOURISTIQUE',
 }
 
+export type EtablissementCategorie = 'DESTINATION' | 'HOTEL' | 'RESTAURANT' | 'ACTIVITE';
+
 // ==================== VOYAGEUR (USER) ====================
 
 /**

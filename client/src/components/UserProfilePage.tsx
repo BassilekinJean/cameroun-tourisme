@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   User, Mail, MapPin, Lock, Camera, Save, X, Eye, EyeOff, Loader2, 
-  Heart, Star, MessageCircle, Calendar, Settings, Edit3, Trash2,
-  ChevronRight, Clock, TrendingUp, Award, BookOpen, MapPinned, Upload, AlertCircle, KeyRound, CheckCircle
+  Heart, Star, MessageCircle, Calendar, Edit3, Trash2,
+  ChevronRight, Clock, TrendingUp, Award, AlertCircle, KeyRound, CheckCircle
 } from 'lucide-react';
-import type { User as UserType, Etablissement, Avis } from '../api/types';
-import { updateProfile, toggleFavori, updateProfilePhoto, sendPasswordChangeOtp, changePasswordWithOtp } from '../api/userService';
+import type { User as UserType } from '../api/types';
+import { updateProfile, toggleFavori, sendPasswordChangeOtp, changePasswordWithOtp } from '../api/userService';
 import { getAvisByUser, updateAvis, deleteAvis } from '../api/avisService';
 import { getEtablissementById } from '../api/etablissementService';
+import { mediaService } from '../api/mediaService';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface UserProfilePageProps {
@@ -383,20 +384,33 @@ export default function UserProfilePage({ user, onUpdateUser, onBackToHome, onVi
     setPhotoError(null);
 
     try {
-      const response = await updateProfilePhoto(file);
-      if (response.success && response.data) {
+      // 1. Upload to Supabase
+      const photoUrl = await mediaService.uploadUserPhoto(file, user.id);
+
+      // 2. Update user profile with new URL
+      const response = await updateProfile({
+        publicId: user.id, // Ensure publicId is passed if needed, though endpoint might infer from token
+        nomComplet: user.nomComplet,
+        email: user.email,
+        paysOrigine: user.paysOrigine || 'Cameroun',
+        photoProfile: photoUrl,
+        favorisIds: user.favorisIds
+      });
+
+      if (response.success) {
         // Mettre à jour l'utilisateur avec la nouvelle photo
         const updatedUser = {
           ...user,
-          photoProfile: response.data.url
+          photoProfile: photoUrl
         };
         onUpdateUser(updatedUser);
         setSuccessMessage('Photo de profil mise à jour !');
         setTimeout(() => setSuccessMessage(''), 3000);
       } else {
-        setPhotoError(response.message || 'Erreur lors de l\'upload');
+        setPhotoError(response.message || 'Erreur lors de la mise à jour du profil');
       }
     } catch (error) {
+      console.error('Error uploading photo:', error);
       setPhotoError('Erreur lors de l\'upload de la photo');
     } finally {
       setIsUploadingPhoto(false);

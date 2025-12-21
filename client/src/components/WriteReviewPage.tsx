@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Star, MapPin, Building2, Activity, Upload, X, Loader2 } from 'lucide-react';
-import type { User, EtablissementCategorie, Etablissement } from '../api/types';
+import type { User, EtablissementCategorie, EtablissementListItem } from '../api/types';
 import { createAvis } from '../api/avisService';
 import { searchEtablissements, getEtablissementsByCategorie } from '../api/etablissementService';
 
@@ -13,14 +13,14 @@ interface WriteReviewPageProps {
 export default function WriteReviewPage({ onBackToHome, currentUser, onSubmitReview }: WriteReviewPageProps) {
   const [placeType, setPlaceType] = useState<EtablissementCategorie>('DESTINATION');
   const [placeName, setPlaceName] = useState('');
-  const [selectedEtablissement, setSelectedEtablissement] = useState<Etablissement | null>(null);
+  const [selectedEtablissement, setSelectedEtablissement] = useState<EtablissementListItem | null>(null);
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [suggestions, setSuggestions] = useState<Etablissement[]>([]);
+  const [suggestions, setSuggestions] = useState<EtablissementListItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,7 +47,7 @@ export default function WriteReviewPage({ onBackToHome, currentUser, onSubmitRev
         try {
           const response = await searchEtablissements({ query: placeName, page: 0, size: 10 });
           if (response.success && response.data) {
-            setSuggestions(response.data.etablissements.filter(e => e.categorie === placeType));
+            setSuggestions(response.data.content.filter(e => e.categorie === placeType));
           }
         } catch (err) {
           // Ignorer les erreurs de recherche
@@ -84,7 +84,7 @@ export default function WriteReviewPage({ onBackToHome, currentUser, onSubmitRev
     setImages(images.filter((_, i) => i !== index));
   };
 
-  const handleSelectSuggestion = (etablissement: Etablissement) => {
+  const handleSelectSuggestion = (etablissement: EtablissementListItem) => {
     setSelectedEtablissement(etablissement);
     setPlaceName(etablissement.nom);
     setShowSuggestions(false);
@@ -119,11 +119,13 @@ export default function WriteReviewPage({ onBackToHome, currentUser, onSubmitRev
     try {
       // Si un établissement est sélectionné, utiliser l'API
       if (selectedEtablissement) {
-        const response = await createAvis({
-          etablissementId: selectedEtablissement.publicId,
-          note: rating,
-          commentaire: comment
-        });
+        const response = await createAvis(
+          selectedEtablissement.publicId,
+          {
+            note: rating,
+            message: comment
+          }
+        );
 
         if (response.success) {
           // Appeler aussi le callback local pour mettre à jour l'UI
@@ -139,7 +141,7 @@ export default function WriteReviewPage({ onBackToHome, currentUser, onSubmitRev
           alert('Votre avis a été publié avec succès !');
           onBackToHome();
         } else {
-          setError(response.error || 'Erreur lors de la publication de l\'avis');
+          setError(response.message || 'Erreur lors de la publication de l\'avis');
         }
       } else {
         // Fallback: créer un ID local si pas d'établissement sélectionné
