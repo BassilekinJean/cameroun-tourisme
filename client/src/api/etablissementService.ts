@@ -13,6 +13,7 @@ import type {
   PageResponse,
   SearchParams,
   SearchResult,
+  EtablissementCategorie,
 } from './types';
 
 const LIEUX_BASE = '/lieux';
@@ -23,7 +24,7 @@ const LIEUX_BASE = '/lieux';
 export const getAllEtablissements = async (
   page: number = 0,
   size: number = 12,
-  categorie?: TypeLieu
+  categorie?: TypeLieu | EtablissementCategorie
 ): Promise<ApiResponse<PageResponse<EtablissementListItem>>> => {
   try {
     const response = await apiClient.get<PageResponse<EtablissementListItem>>(LIEUX_BASE, {
@@ -90,7 +91,7 @@ export const searchEtablissements = async (params: SearchParams): Promise<ApiRes
  * Récupérer les établissements par catégorie
  */
 export const getEtablissementsByCategorie = async (
-  categorie: TypeLieu,
+  categorie: TypeLieu | EtablissementCategorie,
   page: number = 0,
   size: number = 12
 ): Promise<ApiResponse<PageResponse<EtablissementListItem>>> => {

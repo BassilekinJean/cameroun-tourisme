@@ -122,6 +122,9 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:}
+        VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY: ${VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY:-sb_publishable_Kehw5Tf1QfMJP2GgRCYTbQ_CMfUvs4J}
+
     container_name: cameroun-tour-frontend
     restart: unless-stopped
     ports:

@@ -200,3 +200,26 @@ L'état de l'utilisateur est géré dans `App.tsx` et passé aux composants via 
 ## 📄 Licence
 
 MIT - Voir le fichier LICENSE à la racine du projet
+
+## ⚡ Supabase Configuration (Nouveau)
+
+L'application utilise désormais **Supabase Storage** pour gérer l'upload des images (photos de profil, images d'établissements).
+
+### Prérequis
+
+1. Créer un projet Supabase.
+2. Créer deux buckets de stockage publics :
+    - `utilisateur_image`
+    - `etablissement_image`
+3. Configurer les politiques d'accès (Policies) pour permettre :
+    - Lecture publique (`SELECT`) pour tout le monde.
+    - Upload (`INSERT`) pour les utilisateurs authentifiés (ou tout le monde si test).
+
+### Variables d'environnement
+
+Ajoutez ces variables dans votre fichier `.env` (à la racine du dossier `client`) :
+
+```env
+VITE_SUPABASE_URL=votre_url_supabase
+VITE_SUPABASE_ANON_KEY=votre_cle_anon_publique
+```

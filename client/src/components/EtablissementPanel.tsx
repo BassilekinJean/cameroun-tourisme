@@ -31,6 +31,8 @@ import {
   reportAvis,
 } from '../api/etablissementPanelService';
 import type { User, Etablissement, Avis, EtablissementPanelStats, EtablissementUpdateData } from '../api/types';
+import { mediaService } from '../api/mediaService';
+import { Plus, Trash2 } from 'lucide-react';
 
 interface EtablissementPanelProps {
   currentUser: User;
@@ -359,12 +361,38 @@ export default function EtablissementPanel({ currentUser, onBack }: Etablissemen
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Photo de profil (URL)</label>
-                  <Input
-                    value={editFormData.photoProfile || ''}
-                    onChange={(e) => setEditFormData({ ...editFormData, photoProfile: e.target.value })}
-                    placeholder="https://..."
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Photo de profil</label>
+                  <div className="flex items-center gap-4">
+                    {editFormData.photoProfile && (
+                      <img src={editFormData.photoProfile} alt="Preview" className="w-16 h-16 rounded-md object-cover" />
+                    )}
+                    <label className="cursor-pointer bg-white px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-emerald-500">
+                      <span>Changer la photo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                             if (file.size > 5 * 1024 * 1024) {
+                                showMessage('error', 'L\'image est trop volumineuse (max 5 Mo)');
+                                return;
+                             }
+                             try {
+                                setEditLoading(true);
+                                const url = await mediaService.uploadEtablissementImage(file, etablissement.id);
+                                setEditFormData({ ...editFormData, photoProfile: url });
+                             } catch (err) {
+                                showMessage('error', 'Erreur lors de l\'upload');
+                             } finally {
+                                setEditLoading(false);
+                             }
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -386,6 +414,64 @@ export default function EtablissementPanel({ currentUser, onBack }: Etablissemen
                       onChange={(e) => setEditFormData({ ...editFormData, longitude: parseFloat(e.target.value) || undefined })}
                     />
                   </div>
+                </div>
+
+                <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-2">Galerie Photos</label>
+                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                      {editFormData.images?.map((img, idx) => (
+                        <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden bg-gray-100">
+                           <img src={img} alt={`Galerie ${idx}`} className="w-full h-full object-cover" />
+                           <button
+                              type="button"
+                              onClick={() => {
+                                 const newImages = [...(editFormData.images || [])];
+                                 newImages.splice(idx, 1);
+                                 setEditFormData({ ...editFormData, images: newImages });
+                              }}
+                              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                           >
+                              <Trash2 className="w-4 h-4" />
+                           </button>
+                        </div>
+                      ))}
+                      <label className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 aspect-square transition-colors">
+                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Plus className="w-8 h-8 text-gray-400" />
+                            <span className="text-xs text-gray-500 mt-1">Ajouter</span>
+                         </div>
+                         <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={async (e) => {
+                               const files = Array.from(e.target.files || []);
+                               if (files.length === 0) return;
+                               
+                               try {
+                                  setEditLoading(true);
+                                  const uploadedUrls: string[] = [];
+                                  
+                                  for (const file of files) {
+                                     if (file.size > 5 * 1024 * 1024) continue; // Skip huge files
+                                     const url = await mediaService.uploadEtablissementImage(file, etablissement.id);
+                                     uploadedUrls.push(url);
+                                  }
+                                  
+                                  setEditFormData({
+                                     ...editFormData,
+                                     images: [...(editFormData.images || []), ...uploadedUrls]
+                                  });
+                               } catch (err) {
+                                  showMessage('error', 'Erreur lors de l\'upload des images');
+                               } finally {
+                                  setEditLoading(false);
+                               }
+                            }}
+                         />
+                      </label>
+                   </div>
                 </div>
 
                 <div className="pt-4 border-t">
