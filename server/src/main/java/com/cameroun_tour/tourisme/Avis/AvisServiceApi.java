@@ -6,9 +6,9 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
-import com.cameroun_tour.tourisme.Avis.model.AvisDto;
 import com.cameroun_tour.tourisme.Avis.model.AvisUpdateDto;
 import com.cameroun_tour.tourisme.common.contracts.AdminAvisDto;
+import com.cameroun_tour.tourisme.common.contracts.AvisDto;
 import com.cameroun_tour.tourisme.common.events.AvisPublieEvent;
 
 public interface AvisServiceApi {
@@ -29,12 +29,12 @@ public interface AvisServiceApi {
 
     
 
-    Page<Avis> listerLesAvisLieu(Long lieuId, PageRequest pageable);
+    Page<AvisDto> listerLesAvisLieu(Long lieuId, PageRequest pageable);
 
     /**
      * Liste les avis d'un établissement par son publicId (UUID)
      */
-    Page<Avis> listerLesAvisParPublicId(UUID etablissementPublicId, int page, int size, String sortBy, String sortDir);
+    Page<AvisDto> listerLesAvisParPublicId(UUID etablissementPublicId, int page, int size, String sortBy, String sortDir);
 
     Page<AvisDto> utilisateurAvis(UUID userId, int page, int size, String sortBy, String sortDir);
 

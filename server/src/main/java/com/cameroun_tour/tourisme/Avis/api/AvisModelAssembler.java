@@ -9,7 +9,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import com.cameroun_tour.tourisme.Avis.Avis;
-import com.cameroun_tour.tourisme.Avis.model.AvisDto;
+import com.cameroun_tour.tourisme.common.contracts.AvisDto;
 import com.cameroun_tour.tourisme.Avis.model.AvisUpdateDto;
 
 @Component

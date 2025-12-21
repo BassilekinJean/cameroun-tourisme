@@ -10,13 +10,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.cameroun_tour.tourisme.Avis.Avis;
+import com.cameroun_tour.tourisme.common.contracts.AvisDto;
 import com.cameroun_tour.tourisme.Avis.AvisServiceApi;
 import com.cameroun_tour.tourisme.Avis.errors.CommentNotFoundException;
-import com.cameroun_tour.tourisme.Avis.model.AvisDto;
 import com.cameroun_tour.tourisme.Avis.model.AvisUpdateDto;
+import com.cameroun_tour.tourisme.common.AvisEtablissementService;
 import com.cameroun_tour.tourisme.common.contracts.AdminAvisDto;
 import com.cameroun_tour.tourisme.common.events.AvisPublieEvent;
-import com.cameroun_tour.tourisme.etablissement.EtablissementServiceApi;
 import com.cameroun_tour.tourisme.etablissement.Etablissement;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurService;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
@@ -35,7 +35,8 @@ public class AviserviceImpl implements AvisServiceApi {
 
     private final AvisRepository avisRepository;
     private final UtilisateurService utilisateurService; 
-    private final EtablissementServiceApi etablissementService;
+    private final AvisEtablissementService etablissementProvider;
+    
 
     @Override
     public void save(Avis avis) {
@@ -49,7 +50,7 @@ public class AviserviceImpl implements AvisServiceApi {
     @Transactional
     public void onAvisPublier(AvisPublieEvent event) {
         UtilisateurEntity auteur = utilisateurService.findByEmail(event.auteurEmail());
-        Etablissement lieu = etablissementService.trouverAvecId(event.lieuId());
+        Etablissement lieu = etablissementProvider.trouverAvecId(event.lieuId());
 
         Avis avis = new Avis();
         avis.setPublicId(UUID.randomUUID());
@@ -85,19 +86,40 @@ public class AviserviceImpl implements AvisServiceApi {
         avisRepository.delete(avis.get());
     }
 
-    public Page<Avis> listerLesAvisLieu(Long lieuId, PageRequest pageable) {
-
-        return avisRepository.findByLieuConcerne_Id(lieuId, pageable);
+    public Page<AvisDto> listerLesAvisLieu(Long lieuId, PageRequest pageable) {
+        return avisRepository.findByLieuConcerne_Id(lieuId, pageable)
+                .map(this::toAvisDto);
     }
 
+    /**
+     * Convertit une entité Avis en AvisDto
+     */
+    private AvisDto toAvisDto(Avis avis) {
+        return new AvisDto(
+            avis.getPublicId(),
+            avis.getMessage(),
+            avis.getAuteur() != null ? avis.getAuteur().getPhotoProfile() : null,
+            avis.getAuteur() != null ? avis.getAuteur().getNomComplet() : null,
+            avis.getDateCreation(),
+            avis.getNombreLikes(),
+            avis.getNote(),
+            avis.getNombreLikes(),
+            avis.getAuteur().getPublicId(),
+            avis.getAuteur().getUserEmail(),
+            avis.getLieuConcerne().getPublicId(),
+            avis.getLieuConcerne().getNom()
+        );
+    }
+    
     @Override
-    public Page<Avis> listerLesAvisParPublicId(UUID etablissementPublicId, int page, int size, String sortBy, String sortDir) {
+    public Page<AvisDto> listerLesAvisParPublicId(UUID etablissementPublicId, int page, int size, String sortBy, String sortDir) {
         var sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
                                                 : Sort.by(sortBy).descending();
 
         var pageable = PageRequest.of(page, size, sort);
 
-        return avisRepository.findByLieuConcerne_PublicId(etablissementPublicId, pageable);
+        return avisRepository.findByLieuConcerne_PublicId(etablissementPublicId, pageable)
+                .map(this::toAvisDto);
     }
 
     public Page<AvisDto> utilisateurAvis(UUID userPublicId, int page, int size, String sortBy,
@@ -108,15 +130,7 @@ public class AviserviceImpl implements AvisServiceApi {
                 var pageable = PageRequest.of(page, size, sort);
 
                 return avisRepository.findByAuteur_PublicId(userPublicId, pageable)
-                        .map(avis -> new AvisDto(
-                            avis.getPublicId(),
-                            avis.getMessage(),
-                            avis.getAuteur().getPhotoProfile(),
-                            avis.getAuteur().getNomComplet(),
-                            avis.getDateCreation(),
-                            avis.getNombreLikes(),
-                            avis.getNote()
-                        ));
+                        .map(avis -> toAvisDto(avis));
     }
 
     @Override
@@ -135,8 +149,7 @@ public class AviserviceImpl implements AvisServiceApi {
         if (avis.isEmpty()) {
             throw new CommentNotFoundException("Avis introuvable");
         }
-        var a = avis.get();
-        return a;
+        return avis.get();
     }
 
     @Override

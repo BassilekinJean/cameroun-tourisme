@@ -3,9 +3,8 @@ package com.cameroun_tour.tourisme.Avis.api;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.cameroun_tour.tourisme.Avis.Avis;
+import com.cameroun_tour.tourisme.common.contracts.AvisDto;
 import com.cameroun_tour.tourisme.Avis.AvisServiceApi;
-import com.cameroun_tour.tourisme.Avis.model.AvisDto;
 import com.cameroun_tour.tourisme.Avis.model.AvisUpdateDto;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurEntity;
 
@@ -44,16 +43,16 @@ public class AvisController {
     public ResponseEntity<AvisDto> getOneAvis(@RequestParam UUID publicUuid) {
         var avis = avisService.getOneAvis(publicUuid);
 
-        if (avis == null) {
-            return ResponseEntity.notFound().build();
-        }
+        // if (avis.equals(null)){
+        //     return ResponseEntity.notFound().build();
+        // }
 
         return ResponseEntity.ok(avisAssembler.toModel(avis));
     }
     
     
     @GetMapping(path = "/all", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Page<Avis>> listerLesAvisDunLieu(@RequestParam UUID etablissementId,
+    public ResponseEntity<Page<AvisDto>> listerLesAvisDunLieu(@RequestParam UUID etablissementId,
                                                                             @RequestParam int page, 
                                                                             @RequestParam int size, 
                                                                             @RequestParam String sortBy, 

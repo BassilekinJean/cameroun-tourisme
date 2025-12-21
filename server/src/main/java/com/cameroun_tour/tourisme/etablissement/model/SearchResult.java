@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SearchResult {
 
-    private List<EtablissementListItem> etablissements;
+    private List<EtablissementListItem> content;
     private long totalResults;
     private int page;
     private int totalPages;

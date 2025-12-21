@@ -9,8 +9,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.cameroun_tour.tourisme.Avis.Avis;
-import com.cameroun_tour.tourisme.Avis.AvisServiceApi;
+import com.cameroun_tour.tourisme.common.contracts.AvisDto;
+import com.cameroun_tour.tourisme.common.EtablisAvisService;
 import com.cameroun_tour.tourisme.etablissement.Etablissement;
 import com.cameroun_tour.tourisme.etablissement.model.EtablissementUpdateDto;
 
@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class EtablissementPanelServiceImpl implements EtablissementPanelService {
 
     private final EtablissementRepository etablissementRepository;
-    private final AvisServiceApi avisService;
+    private final EtablisAvisService avisService;
 
     @Override
     @Transactional(readOnly = true)
@@ -37,12 +37,12 @@ public class EtablissementPanelServiceImpl implements EtablissementPanelService 
         Etablissement etablissement = getEtablissementByOwnerEmail(ownerEmail);
         
         // Compter les avis
-        long totalAvis = avisService.listerLesAvisLieu(etablissement.getId(), PageRequest.of(0, 1)).getTotalElements();
+        long totalAvis = avisService.listerLieu(etablissement.getId(), PageRequest.of(0, 1)).getTotalElements();
         
         // Calculer la note moyenne
-        Page<Avis> allAvis = avisService.listerLesAvisLieu(etablissement.getId(), PageRequest.of(0, 1000));
+        Page<AvisDto> allAvis = avisService.listerLieu(etablissement.getId(), PageRequest.of(0, 1000));
         double avgRating = allAvis.getContent().stream()
-                .mapToInt(Avis::getNote)
+                .mapToInt(AvisDto::getNote)
                 .average()
                 .orElse(0.0);
         
@@ -85,7 +85,7 @@ public class EtablissementPanelServiceImpl implements EtablissementPanelService 
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Avis> getEtablissementAvis(String ownerEmail, int page, int size, String sort, String sortDir) {
+    public Page<AvisDto> getEtablissementAvis(String ownerEmail, int page, int size, String sort, String sortDir) {
         Etablissement etablissement = getEtablissementByOwnerEmail(ownerEmail);
         
         Sort sortOrder = sortDir.equalsIgnoreCase("asc") 
@@ -94,6 +94,6 @@ public class EtablissementPanelServiceImpl implements EtablissementPanelService 
         
         PageRequest pageable = PageRequest.of(page, size, sortOrder);
         
-        return avisService.listerLesAvisLieu(etablissement.getId(), pageable);
+        return avisService.listerLieu(etablissement.getId(), pageable);
     }
 }

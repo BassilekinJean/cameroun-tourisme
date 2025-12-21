@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.cameroun_tour.tourisme.Avis.AvisServiceApi;
+import com.cameroun_tour.tourisme.common.EtablisAvisService;
 import com.cameroun_tour.tourisme.common.contracts.AvisCreationDto;
 import com.cameroun_tour.tourisme.common.utils.enums.TypeLieu;
 import com.cameroun_tour.tourisme.etablissement.Etablissement;
@@ -39,13 +39,14 @@ import lombok.RequiredArgsConstructor;
 public class EtablissementController {
 
     private final EtablissementServiceApi etablissementService;
-    private final AvisServiceApi avisService;
+
+    private final EtablisAvisService etablissementRatingsService;
 
     /**
      * Convertit un établissement en EtablissementListItem avec le rating calculé
      */
     private EtablissementListItem toListItemWithRating(Etablissement e) {
-        Double avgRating = avisService.findAverageRatingByEtablissementId(e.getId());
+        Double avgRating = etablissementRatingsService.getRating(e.getId());
         return EtablissementListItem.builder()
                 .publicId(e.getPublicId())
                 .nom(e.getNom())
@@ -93,7 +94,7 @@ public class EtablissementController {
         EtablissementResponse response = EtablissementResponse.fromEntity(etablissement);
         
         // Calculer le rating depuis les avis
-        Double avgRating = avisService.findAverageRatingByEtablissementId(etablissement.getId());
+        Double avgRating = etablissementRatingsService.getRating(etablissement.getId());
         response.setRating(avgRating != null ? Math.round(avgRating * 10) / 10.0 : null);
         
         return ResponseEntity.ok(response);
@@ -127,7 +128,7 @@ public class EtablissementController {
                 .collect(Collectors.toList());
         
         SearchResult searchResult = SearchResult.builder()
-                .etablissements(items)
+                .content(items)
                 .totalResults(results.getTotalElements())
                 .page(results.getNumber())
                 .totalPages(results.getTotalPages())
