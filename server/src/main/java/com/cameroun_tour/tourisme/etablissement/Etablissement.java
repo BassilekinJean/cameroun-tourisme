@@ -21,7 +21,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
@@ -52,6 +51,7 @@ public class Etablissement {
     @NotBlank(message = "Veuillez fourni un numéro de contact")
     private String telephone;
 
+    @NotBlank(message = "Vous de devez ajouter au moins 1 image des Lieux")
     private String photoProfile;
 
     private String adresse;
@@ -60,7 +60,6 @@ public class Etablissement {
     private String ville;
 
     @ElementCollection
-    @NotNull(message = "Vous de devez ajouter au moins 1 image des Lieux")
     private List<String> images;
 
     @Enumerated(EnumType.STRING)

@@ -10,7 +10,6 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 public record LieuRegistrationDto(
 
@@ -35,6 +34,7 @@ public record LieuRegistrationDto(
     @NotBlank(message = "Veuillez fourni un numéro de contact")
     String telephone,
 
+    @NotBlank(message = "La photo de profil est obligatoire")
     String photoProfile,
 
     String adresse,
@@ -43,7 +43,6 @@ public record LieuRegistrationDto(
     String ville,
 
     @ElementCollection
-    @NotNull(message = "Vous de devez ajouter au moins 1 image des Lieux")
     List<String> images,
 
     @Enumerated(EnumType.STRING)

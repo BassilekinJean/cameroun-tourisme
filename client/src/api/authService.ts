@@ -91,10 +91,10 @@ export const loginEtablissement = async (data: UserLoginData): Promise<AuthRespo
       user,
       message: 'Connexion réussie',
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
       success: false,
-      message: getErrorMessage(error),
+      message: getErrorMessage(error) || 'Email ou mot de passe incorrect',
     };
   }
 };
