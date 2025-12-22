@@ -21,7 +21,7 @@ const discoveries = [
   {
     id: 2,
     title: 'Culture & Traditions',
-    image: 'https://images.unsplash.com/photo-1590845947376-2638caa89309?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080',
+    image: 'https://images.unsplash.com/photo-1660675134062-7d3bbb340608?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080',
     rating: 4.8,
     reviews: 356,
     category: 'Culture',
@@ -123,7 +123,7 @@ export default function ActivitiesSection({ onCategoryClick }: ActivitiesSection
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 lg:py-16">
       <div className="mb-8 sm:mb-10 text-center">
         <h2 className="text-2xl sm:text-3xl lg:text-4xl mb-2 sm:mb-3 font-bold text-gray-900">
-          🇨🇲 Découvrez notre belle terre
+          🇨🇲 Découvrez la Terre de nos Ancêtres
         </h2>
         <p className="text-sm sm:text-base lg:text-lg text-gray-600 max-w-2xl mx-auto">
           Le Cameroun, l'Afrique en miniature : une mosaïque de cultures, de saveurs et de paysages uniques
