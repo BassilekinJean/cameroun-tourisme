@@ -34,14 +34,10 @@ services:
       SPRING_PROFILES_ACTIVE: prod
       # ============================================================
       # Supabase PostgreSQL Database
+      # URL contains embedded credentials: jdbc:postgresql://user:pass@host:port/db
       # ============================================================
       SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_DB_USER: ${SUPABASE_DB_USER}
-      SUPABASE_DB_PASSWORD: ${SUPABASE_DB_PASSWORD}
-      # Spring Datasource (for JPA/Hibernate)
       SPRING_DATASOURCE_URL: ${SUPABASE_URL}
-      SPRING_DATASOURCE_USERNAME: ${SUPABASE_DB_USER}
-      SPRING_DATASOURCE_PASSWORD: ${SUPABASE_DB_PASSWORD}
       # ============================================================
       # Redis
       # ============================================================
