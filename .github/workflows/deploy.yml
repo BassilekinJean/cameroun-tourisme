@@ -180,7 +180,6 @@ jobs:
     name: 🚀 Deploy to VPS
     runs-on: ubuntu-latest
     needs: build
-    if: ${{ needs.build.result == 'success' }}
     environment: variable
 
     steps:
