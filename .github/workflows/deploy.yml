@@ -22,8 +22,8 @@ on:
 env:
   REGISTRY: ghcr.io
   # ghcr.io requires lowercase - hardcoded to avoid uppercase issues
-  BACKEND_IMAGE: ghcr.io/bassilekinejean/cameroun-tourisme/backend
-  FRONTEND_IMAGE: ghcr.io/bassilekinejean/cameroun-tourisme/frontend
+  BACKEND_IMAGE: ghcr.io/${{ github.repository }}/backend
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository }}/frontend
 
 permissions:
   contents: read
@@ -239,7 +239,11 @@ jobs:
           script: |
             cd ${{ secrets.VPS_DEPLOY_PATH }}
             
-            # Login to GitHub Container Registry (token interpolé directement)
+            # Convert image names to lowercase (required by Docker)
+            BACKEND_IMAGE=$(echo "$BACKEND_IMAGE" | tr '[:upper:]' '[:lower:]')
+            FRONTEND_IMAGE=$(echo "$FRONTEND_IMAGE" | tr '[:upper:]' '[:lower:]')
+            
+            # Login to GitHub Container Registry
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             # Pull latest images
