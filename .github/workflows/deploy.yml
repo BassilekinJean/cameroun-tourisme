@@ -21,8 +21,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/${{ github.repository }}/backend
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository }}/frontend
+  # ghcr.io requires lowercase - hardcoded to avoid uppercase issues
+  BACKEND_IMAGE: ghcr.io/bassilekinejean/cameroun-tourisme/backend
+  FRONTEND_IMAGE: ghcr.io/bassilekinejean/cameroun-tourisme/frontend
 
 permissions:
   contents: read
@@ -278,6 +279,10 @@ jobs:
             
             # Show status
             docker compose -f docker-compose.prod.yml ps
+            
+            # Security: Remove stored credentials (important for shared VPS)
+            docker logout ghcr.io
+            rm -f ~/.docker/config.json
 
       - name: ✅ Deployment Summary
         run: |
