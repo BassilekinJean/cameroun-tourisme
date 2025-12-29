@@ -2,11 +2,11 @@ name: Frontend Tests
 
 on:
   push:
-    branches: [ prod, dev ]
+    branches: [ "prod", "dev" ]
     paths:
       - 'client/**'
   pull_request:
-    branches: [ prod, dev ]
+    branches: [ "prod", "dev" ]
     paths:
       - 'client/**'
 
