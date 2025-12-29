@@ -73,8 +73,8 @@ public class SecurityConfig {
                 // Endpoints de lecture des établissements - accès public
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/lieux/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/avis/**").permitAll()
-                // Endpoints de média/images - accès public en lecture
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/media/**").permitAll()
+                // Actuator (Health check) - accès public pour Docker
+                .requestMatchers("/actuator/**").permitAll()
                 // Ressources statiques (Frontend React)
                 .requestMatchers("/", "/index.html", "/assets/**", "/*.ico", "/*.json", "/*.png", "/*.svg").permitAll()
                 // Tout le reste nécessite une authentification
