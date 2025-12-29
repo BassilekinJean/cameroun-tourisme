@@ -1,0 +1,113 @@
+# ================================================================
+# Docker Compose - Cameroun Tourisme (Production)
+# Optimized for VPS deployment via CI/CD
+# Uses Supabase PostgreSQL as database
+# ================================================================
+
+services:
+  # ================================================================
+  # Redis Cache
+  # ================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: cameroun-tour-redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - cameroun-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    command: redis-server --appendonly yes
+
+  # ================================================================
+  # Backend Spring Boot (from Registry)
+  # ================================================================
+  backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/bassilekinejean/cameroun-tourisme/backend:latest}
+    container_name: cameroun-tour-backend
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # ============================================================
+      # Supabase PostgreSQL Database
+      # ============================================================
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_DB_USER: ${SUPABASE_DB_USER}
+      SUPABASE_DB_PASSWORD: ${SUPABASE_DB_PASSWORD}
+      # Spring Datasource (for JPA/Hibernate)
+      SPRING_DATASOURCE_URL: ${SUPABASE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SUPABASE_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${SUPABASE_DB_PASSWORD}
+      # ============================================================
+      # Redis
+      # ============================================================
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # ============================================================
+      # Mail (Production SMTP)
+      # ============================================================
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      # ============================================================
+      # Security
+      # ============================================================
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      # OAuth2
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      # ============================================================
+      # Frontend URL
+      # ============================================================
+      FRONTEND_URL: ${FRONTEND_URL}
+    ports:
+      - "8089:8080"
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - cameroun-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  # ================================================================
+  # Frontend React/Vite avec Nginx (from Registry)
+  # ================================================================
+  frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/bassilekinejean/cameroun-tourisme/frontend:latest}
+    container_name: cameroun-tour-frontend
+    restart: always
+    ports:
+      - "5174:80"
+    networks:
+      - cameroun-network
+    depends_on:
+      backend:
+        condition: service_healthy
+
+# ================================================================
+# Volumes persistants
+# ================================================================
+volumes:
+  redis_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+# ================================================================
+# Réseau Docker
+# ================================================================
+networks:
+  cameroun-network:
+    driver: bridge
