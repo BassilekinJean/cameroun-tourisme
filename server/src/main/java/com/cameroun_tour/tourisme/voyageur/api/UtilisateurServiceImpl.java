@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.HashSet;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -57,8 +58,9 @@ public class UtilisateurServiceImpl implements UtilisateurService {
                                   u.getNomComplet(),
                                   u.getUserEmail(),
                                   u.getPaysOrigine(),
+
                                   u.getPhotoProfile(),
-                                  u.getFavorisIds(), // Directement les UUIDs
+                                  u.getFavorisIds() != null ? new HashSet<>(u.getFavorisIds()) : new HashSet<>(), // Directement les UUIDs
                                   u.getRole()); // Ajouter le rôle
     }
 
@@ -86,8 +88,10 @@ public class UtilisateurServiceImpl implements UtilisateurService {
     public UtilisateurEntity findByEmail(String email){
 
         Optional <UtilisateurEntity> utilisateur = this.userRepository.findByUserEmail(email);
-        return utilisateur.orElseThrow(() -> 
+        UtilisateurEntity u = utilisateur.orElseThrow(() -> 
                                             new UserNotFoundException("L'utilisateur avec l'email " + email + " est introuvable"));
+        u.getFavorisIds().size();
+        return u;
     }
 
     @Override
@@ -155,8 +159,10 @@ public class UtilisateurServiceImpl implements UtilisateurService {
     @Override
     @Transactional(readOnly = true)
     public UtilisateurEntity findByPublicId(UUID id) {
-        return userRepository.findByPublicId(id)
+        UtilisateurEntity u = userRepository.findByPublicId(id)
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'id : " + id));
+        u.getFavorisIds().size();
+        return u;
     }
 
     // ==================== MÉTHODES ADMIN ====================
@@ -271,7 +277,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
                 .email(user.getUserEmail())
                 .paysOrigine(user.getPaysOrigine())
                 .photoProfile(user.getPhotoProfile())
-                .favorisIds(user.getFavorisIds())
+                .favorisIds(user.getFavorisIds() != null ? new HashSet<>(user.getFavorisIds()) : new HashSet<>())
                 .role(user.getRole())
                 .accountLocked(user.isAccountLocked())
                 .emailVerified(false) // Champ non implémenté actuellement
