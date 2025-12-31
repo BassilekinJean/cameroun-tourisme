@@ -6,7 +6,6 @@ import java.util.UUID;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.cameroun_tour.tourisme.common.email.EmailServiceApi;
 import com.cameroun_tour.tourisme.voyageur.UtilisateurService;
@@ -154,19 +153,4 @@ public class UtilisateurController {
         return ResponseEntity.ok(Map.of("message", "Mot de passe mis à jour avec succès"));
     }
 
-    @PostMapping(value = "/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Mettre à jour la photo de profil", description = "Upload une nouvelle photo de profil")
-    public ResponseEntity<?> updateProfilePhoto(
-            @RequestParam("file") MultipartFile file,
-            Authentication authentication) {
-        
-        String email = authentication.getName();
-        
-        try {
-            String photoUrl = userService.updateProfilePhoto(email, file);
-            return ResponseEntity.ok(Map.of("url", photoUrl));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Erreur lors de l'upload: " + e.getMessage()));
-        }
-    }
 }

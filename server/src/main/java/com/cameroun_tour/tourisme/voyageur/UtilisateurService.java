@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.cameroun_tour.tourisme.common.contracts.AdminUpdateUserRequest;
 import com.cameroun_tour.tourisme.common.contracts.AdminUserDto;
@@ -27,8 +26,6 @@ public interface UtilisateurService {
     
     void updatePassword(String email, String newPassword);
     
-    String updateProfilePhoto(String email, MultipartFile file) throws Exception;
-
     UtilisateurEntity findByPublicId(UUID id);
 
     UtilisateurEntity findByEmail(String email);
