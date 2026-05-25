@@ -113,12 +113,8 @@ jobs:
     name: 🔨 Build & Push Docker Images
     runs-on: ubuntu-latest
     environment: variable
-    needs: [test-backend, test-frontend]
-    if: |
-      always() && 
-      (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped') &&
-      (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped')
-
+     # needs: [test-backend, test-frontend]   # supprimé
+    if: ${{ always() }}
     outputs:
       backend_tag: ${{ steps.meta-backend.outputs.tags }}
       frontend_tag: ${{ steps.meta-frontend.outputs.tags }}
