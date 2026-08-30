@@ -75,9 +75,9 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/avis/**").permitAll()
                 // Actuator (Health check) - accès public pour Docker
                 .requestMatchers("/actuator/**").permitAll()
-                // Ressources statiques (Frontend React)
-                .requestMatchers("/", "/index.html", "/assets/**", "/*.ico", "/*.json", "/*.png", "/*.svg").permitAll()
-                // Tout le reste nécessite une authentification
+                // Ressources statiques et toutes les routes SPA non-API -> accès public pour afficher le Frontend React
+                .requestMatchers(request -> !request.getServletPath().startsWith("/api")).permitAll()
+                // Endpoints API sécurisés - nécessitent une authentification
                 .anyRequest().authenticated()
             )
             
