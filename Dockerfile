@@ -50,4 +50,4 @@ COPY --from=backend-builder /app/server/target/*.jar app.jar
 # Render assigns a dynamic PORT environment variable (default 8080)
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-Dserver.port=${PORT:-8080}", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8080} -jar app.jar"]
