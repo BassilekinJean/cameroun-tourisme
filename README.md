@@ -406,11 +406,11 @@ Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de
 
 ## 👥 Équipe
 
-- **Développeur** - Basile King
+- **Développeur** - Bassilekin jean simonet + contributeurs
 
 ## 📧 Contact
 
-Pour toute question : contact@camertrip.cm
+Pour toute question : bassilekinjean@outlook.com
 
 ---
 

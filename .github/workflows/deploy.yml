@@ -152,7 +152,6 @@ jobs:
       always() &&
       (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped') &&
       (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped')
-
     outputs:
       image_tag: ${{ steps.image-tag.outputs.tag }}
       backend_image: ${{ steps.image-tag.outputs.backend }}
