@@ -19,7 +19,7 @@ services:
         fromService:
           type: web
           name: cameroun-tourisme-frontend
-          property: url
+          property: host
 
   # ================================================================
   # Service Frontend - React (Static Site)
@@ -35,4 +35,4 @@ services:
         fromService:
           type: web
           name: cameroun-tourisme-backend
-          property: url
+          property: host
