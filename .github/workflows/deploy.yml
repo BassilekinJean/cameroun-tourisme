@@ -11,6 +11,7 @@ on:
     paths-ignore:
       - '**/*.md'
       - '**/LICENSE'
+      - '.github/CODEOWNERS'
   workflow_dispatch:
     inputs:
       skip_tests:
@@ -18,26 +19,40 @@ on:
         required: false
         type: boolean
         default: false
+      environment:
+        description: 'Target environment'
+        required: false
+        type: choice
+        options:
+          - production
+          - staging
+        default: production
 
 env:
   REGISTRY: ghcr.io
-  # ghcr.io requires lowercase - hardcoded to avoid uppercase issues
-  BACKEND_IMAGE: ghcr.io/${{ github.repository }}/backend
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository }}/frontend
+  # ghcr.io requires lowercase - using github.repository_owner to avoid uppercase issues
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/backend
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/frontend
+  JAVA_VERSION: '21'
+  NODE_VERSION: '20'
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false   # Ne jamais annuler un déploiement en cours
 
 permissions:
   contents: read
   packages: write
 
+# ================================================================
+# CI - Tests Backend
+# ================================================================
 jobs:
-  # ================================================================
-  # CI - Tests Backend
-  # ================================================================
   test-backend:
     name: 🧪 Test Backend
     runs-on: ubuntu-latest
     if: ${{ github.event.inputs.skip_tests != 'true' }}
-    
+
     services:
       mysql:
         image: mysql:8.0
@@ -63,10 +78,10 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: ☕ Set up JDK 21
+      - name: ☕ Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: maven
 
@@ -76,6 +91,14 @@ jobs:
           DB_USER_MYSQL: testuser
           DB_PASSWORD_MYSQL: testpassword
         run: mvn -B test --file pom.xml
+
+      - name: 📊 Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-report
+          path: server/target/surefire-reports/
+          retention-days: 7
 
   # ================================================================
   # CI - Tests Frontend
@@ -93,18 +116,29 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 📦 Setup Node.js
+      - name: 📦 Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: './client/package-lock.json'
 
       - name: 📦 Install dependencies
         run: npm ci
 
+      - name: 🔍 Lint
+        run: npm run lint --if-present
+
       - name: 🧪 Run tests
         run: npm run test
+
+      - name: 📊 Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-report
+          path: client/coverage/
+          retention-days: 7
 
   # ================================================================
   # Build - Docker Images
@@ -115,17 +149,29 @@ jobs:
     environment: variable
     needs: [test-backend, test-frontend]
     if: |
-      always() && 
+      always() &&
       (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped') &&
       (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped')
 
     outputs:
-      backend_tag: ${{ steps.meta-backend.outputs.tags }}
-      frontend_tag: ${{ steps.meta-frontend.outputs.tags }}
+      image_tag: ${{ steps.image-tag.outputs.tag }}
+      backend_image: ${{ steps.image-tag.outputs.backend }}
+      frontend_image: ${{ steps.image-tag.outputs.frontend }}
 
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
+
+      # Tag immuable basé sur le SHA du commit (plus fiable que "latest")
+      - name: 🏷️ Compute image tag
+        id: image-tag
+        run: |
+          SHA_SHORT=$(echo "${{ github.sha }}" | cut -c1-7)
+          BACKEND=$(echo "${{ env.BACKEND_IMAGE }}" | tr '[:upper:]' '[:lower:]')
+          FRONTEND=$(echo "${{ env.FRONTEND_IMAGE }}" | tr '[:upper:]' '[:lower:]')
+          echo "tag=${SHA_SHORT}" >> $GITHUB_OUTPUT
+          echo "backend=${BACKEND}" >> $GITHUB_OUTPUT
+          echo "frontend=${FRONTEND}" >> $GITHUB_OUTPUT
 
       - name: 🔐 Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -134,23 +180,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🏷️ Extract metadata for Backend
-        id: meta-backend
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.BACKEND_IMAGE }}
-          tags: |
-            type=sha,prefix=
-            type=raw,value=latest
-
-      - name: 🏷️ Extract metadata for Frontend
-        id: meta-frontend
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.FRONTEND_IMAGE }}
-          tags: |
-            type=sha,prefix=
-            type=raw,value=latest
+      # BuildKit améliore les performances et le cache des layers
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: 🔨 Build & Push Backend Image
         uses: docker/build-push-action@v5
@@ -158,8 +190,15 @@ jobs:
           context: ./server
           file: ./server/Dockerfile
           push: true
-          tags: ${{ steps.meta-backend.outputs.tags }}
-          labels: ${{ steps.meta-backend.outputs.labels }}
+          tags: |
+            ${{ steps.image-tag.outputs.backend }}:${{ steps.image-tag.outputs.tag }}
+            ${{ steps.image-tag.outputs.backend }}:latest
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          # Cache cross-job grâce au registry
+          cache-from: type=registry,ref=${{ steps.image-tag.outputs.backend }}:buildcache
+          cache-to:   type=registry,ref=${{ steps.image-tag.outputs.backend }}:buildcache,mode=max
 
       - name: 🔨 Build & Push Frontend Image
         uses: docker/build-push-action@v5
@@ -167,19 +206,18 @@ jobs:
           context: ./client
           file: ./client/Dockerfile
           push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
+          tags: |
+            ${{ steps.image-tag.outputs.frontend }}:${{ steps.image-tag.outputs.tag }}
+            ${{ steps.image-tag.outputs.frontend }}:latest
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           build-args: |
             VITE_API_URL=${{ secrets.VITE_API_URL }}
             VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
             VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY=${{ secrets.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY }}
-
-      # Debugging: afficher les résultats des jobs précédents (utile pour diagnostiquer)
-      - name: 🐞 Debug needs results
-        run: |
-          echo "needs.test-backend.result=${{ needs.test-backend.result }}"
-          echo "needs.test-frontend.result=${{ needs.test-frontend.result }}"
-          echo "job.status=${{ job.status }}"
+          cache-from: type=registry,ref=${{ steps.image-tag.outputs.frontend }}:buildcache
+          cache-to:   type=registry,ref=${{ steps.image-tag.outputs.frontend }}:buildcache,mode=max
 
   # ================================================================
   # CD - Deploy to VPS
@@ -208,16 +246,17 @@ jobs:
       - name: 🚀 Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
-          # Docker Images
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+          BACKEND_IMAGE: ${{ needs.build.outputs.backend_image }}
+          FRONTEND_IMAGE: ${{ needs.build.outputs.frontend_image }}
           REGISTRY: ${{ env.REGISTRY }}
-          BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}:latest
-          FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}:latest
-          # Vite Supabase
+          GH_ACTOR: ${{ github.actor }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Supabase
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          # Supabase Database (URL contains embedded credentials)
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           # Security
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
@@ -234,63 +273,93 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT }}
-          envs: REGISTRY,BACKEND_IMAGE,FRONTEND_IMAGE,SUPABASE_URL,JWT_SECRET_KEY,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,MAIL_HOST,MAIL_PORT,MAIL_USER,MAIL_PASSWORD,FRONTEND_URL,VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY,VITE_SUPABASE_URL,VITE_API_URL
+          envs: IMAGE_TAG,BACKEND_IMAGE,FRONTEND_IMAGE,REGISTRY,GH_ACTOR,GH_TOKEN,SUPABASE_URL,JWT_SECRET_KEY,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,MAIL_HOST,MAIL_PORT,MAIL_USER,MAIL_PASSWORD,FRONTEND_URL,VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY,VITE_SUPABASE_URL,VITE_API_URL
           script: |
-            cd ${{ secrets.VPS_DEPLOY_PATH }}
-            
-            # Convert image names to lowercase (required by Docker)
-            BACKEND_IMAGE=$(echo "$BACKEND_IMAGE" | tr '[:upper:]' '[:lower:]')
-            FRONTEND_IMAGE=$(echo "$FRONTEND_IMAGE" | tr '[:upper:]' '[:lower:]')
-            
-            # Login to GitHub Container Registry
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # Pull latest images
-            docker pull $BACKEND_IMAGE
-            docker pull $FRONTEND_IMAGE
-            
-            # Stop and remove old containers
+            set -euo pipefail
+            cd "${{ secrets.VPS_DEPLOY_PATH }}"
+
+            echo "▶ Tagging previous containers for rollback..."
+            PREVIOUS_BACKEND=$(docker inspect --format='{{index .RepoTags 0}}' $(docker compose -f docker-compose.prod.yml ps -q backend 2>/dev/null) 2>/dev/null || echo "none")
+            PREVIOUS_FRONTEND=$(docker inspect --format='{{index .RepoTags 0}}' $(docker compose -f docker-compose.prod.yml ps -q frontend 2>/dev/null) 2>/dev/null || echo "none")
+            echo "Previous backend: $PREVIOUS_BACKEND"
+            echo "Previous frontend: $PREVIOUS_FRONTEND"
+
+            echo "▶ Logging in to GHCR..."
+            echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
+
+            echo "▶ Pulling new images (tag: $IMAGE_TAG)..."
+            docker pull "${BACKEND_IMAGE}:${IMAGE_TAG}"
+            docker pull "${FRONTEND_IMAGE}:${IMAGE_TAG}"
+
+            echo "▶ Exporting environment variables..."
+            export BACKEND_IMAGE="${BACKEND_IMAGE}:${IMAGE_TAG}"
+            export FRONTEND_IMAGE="${FRONTEND_IMAGE}:${IMAGE_TAG}"
+            export SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY VITE_SUPABASE_URL VITE_API_URL
+            export JWT_SECRET_KEY GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET
+            export MAIL_HOST MAIL_PORT MAIL_USER MAIL_PASSWORD FRONTEND_URL
+
+            echo "▶ Stopping old containers..."
             docker compose -f docker-compose.prod.yml down --remove-orphans || true
-            
-            # ============================================================
-            # Export all secrets as environment variables for docker-compose
-            # These variables exist ONLY during this script execution
-            # They are NOT stored on the VPS
-            # ============================================================
-            export BACKEND_IMAGE=$BACKEND_IMAGE
-            export FRONTEND_IMAGE=$FRONTEND_IMAGE
-            export VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY=$VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY
-            export VITE_SUPABASE_URL=$VITE_SUPABASE_URL
-            export VITE_API_URL=$VITE_API_URL
-            export SUPABASE_URL=$SUPABASE_URL
-            export JWT_SECRET_KEY=$JWT_SECRET_KEY
-            export GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
-            export GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
-            export MAIL_HOST=$MAIL_HOST
-            export MAIL_PORT=$MAIL_PORT
-            export MAIL_USER=$MAIL_USER
-            export MAIL_PASSWORD=$MAIL_PASSWORD
-            export FRONTEND_URL=$FRONTEND_URL
-            
-            # Start containers with exported environment variables
+
+            echo "▶ Starting new containers..."
             docker compose -f docker-compose.prod.yml up -d
-            
-            # Cleanup old images
+
+            echo "▶ Waiting for health checks (60s max)..."
+            TIMEOUT=60
+            ELAPSED=0
+            until docker compose -f docker-compose.prod.yml ps | grep -q "healthy" || [ $ELAPSED -ge $TIMEOUT ]; do
+              sleep 5
+              ELAPSED=$((ELAPSED + 5))
+              echo "  Waiting... ${ELAPSED}s / ${TIMEOUT}s"
+            done
+
+            if [ $ELAPSED -ge $TIMEOUT ]; then
+              echo "❌ Health check timeout — rolling back..."
+              docker compose -f docker-compose.prod.yml down --remove-orphans || true
+              if [ "$PREVIOUS_BACKEND" != "none" ] && [ "$PREVIOUS_FRONTEND" != "none" ]; then
+                export BACKEND_IMAGE="$PREVIOUS_BACKEND"
+                export FRONTEND_IMAGE="$PREVIOUS_FRONTEND"
+                docker compose -f docker-compose.prod.yml up -d
+                echo "⚠️ Rolled back to previous images."
+              fi
+              docker logout ghcr.io
+              rm -f ~/.docker/config.json
+              exit 1
+            fi
+
+            echo "▶ Cleaning up old images..."
             docker image prune -f
-            
-            # Show status
+
+            echo "▶ Container status:"
             docker compose -f docker-compose.prod.yml ps
-            
-            # Security: Remove stored credentials (important for shared VPS)
+
+            echo "▶ Securing credentials..."
             docker logout ghcr.io
             rm -f ~/.docker/config.json
 
+            echo "✅ Deployment successful (tag: $IMAGE_TAG)"
+
       - name: ✅ Deployment Summary
+        if: success()
         run: |
           echo "## 🚀 Deployment Successful!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Backend Image:** ${{ env.BACKEND_IMAGE }}:latest" >> $GITHUB_STEP_SUMMARY
-          echo "**Frontend Image:** ${{ env.FRONTEND_IMAGE }}:latest" >> $GITHUB_STEP_SUMMARY
-          echo "**Deployed to:** ${{ secrets.VPS_HOST }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Image Tag** | \`${{ needs.build.outputs.image_tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Backend Image** | \`${{ needs.build.outputs.backend_image }}:${{ needs.build.outputs.image_tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Frontend Image** | \`${{ needs.build.outputs.frontend_image }}:${{ needs.build.outputs.image_tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **VPS Host** | \`${{ secrets.VPS_HOST }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | [\`${{ github.sha }}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered by** | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Workflow** | [View run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |" >> $GITHUB_STEP_SUMMARY
 
+      - name: ❌ Failure Summary
+        if: failure()
+        run: |
+          echo "## ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The deployment of commit [\`${{ github.sha }}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) failed." >> $GITHUB_STEP_SUMMARY
+          echo "A rollback to the previous version was attempted automatically." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "[🔍 View logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
